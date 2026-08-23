@@ -1,0 +1,45 @@
+name = "kids-timetable"
+main = "server/index.js"
+compatibility_date = "2026-08-23"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+# Without this, Cloudflare serves matching static files (including index.html) directly,
+# bypassing the Worker entirely — which would skip our login gate. This forces every
+# request through server/index.js first; it decides itself when to fall back to ASSETS.
+run_worker_first = true
+# Default asset serving redirects /login.html -> /login etc. Disabled so paths behave
+# exactly as the app expects (e.g. redirects to "/login.html" actually serve that file).
+html_handling = "none"
+
+[[routes]]
+pattern = "kidstimetable.klmn2.com"
+custom_domain = true
+
+[vars]
+# Anyone can sign in (Google/email code); this is the one email that gets
+# write access — everyone else is read-only. Editable directly in the Cloudflare
+# dashboard (Settings > Variables) without a redeploy.
+ADMIN_EMAIL = "srijaan2307@gmail.com"
+PUBLIC_BASE_URL = "https://kidstimetable.klmn2.com"
+# Must match the domain WebAuthn (Touch ID) is used from.
+RP_ID = "kidstimetable.klmn2.com"
+# Not secret (public per OAuth spec) — pairs with GOOGLE_CLIENT_SECRET, set via
+# `npx wrangler secret put GOOGLE_CLIENT_SECRET` (never stored in this file).
+GOOGLE_CLIENT_ID = "980056554331-55l48p5mifq9fv9no7a3gf1hl4dko54i.apps.googleusercontent.com"
+# Sender for one-time-code sign-in emails, sent via Resend (RESEND_API_KEY secret).
+# The domain here must be verified in the Resend dashboard before this works.
+RESEND_FROM_EMAIL = "Kids Timetable <login@klmn2.com>"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kids-timetable"
+database_id = "597d3aeb-4d4e-435d-a9b0-57f3e5eeef23"
+
+# Holds both login sessions (session:<id>) and small persistent config like the
+# family password hash (config:auth).
+[[kv_namespaces]]
+binding = "KV"
+id = "abdff5b8b5e54b9daeb7cd17d15c3683"

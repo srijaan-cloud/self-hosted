@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kids Timetable — Sign in</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="auth-screen">
+    <div class="auth-card">
+      <h1>🗓️ Kids Timetable</h1>
+
+      <!-- Shown only right after a first-ever Google sign-in, to confirm the
+           provider's email is really reachable by this person before granting access. -->
+      <div id="verify-form" class="hidden">
+        <p class="auth-sub">We sent a code to <strong id="verify-email"></strong> to confirm it's really you. Enter it to continue.</p>
+        <input id="verify-code" type="text" inputmode="numeric" placeholder="6-digit code" maxlength="6" autocomplete="one-time-code" />
+        <button id="verify-submit" class="btn btn-primary">Verify &amp; Continue</button>
+        <p id="verify-resend" class="auth-link" style="text-align:center;">Resend code</p>
+      </div>
+
+      <div id="primary-login">
+        <p class="auth-sub">Sign in to view and update the tracker.</p>
+
+        <div id="oauth-buttons">
+          <a id="google-btn" class="btn btn-oauth btn-google" href="/auth/google">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/>
+                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+              </svg>
+            </span>
+            <span>Sign in with Google</span>
+          </a>
+        </div>
+
+        <button id="touchid-btn" class="btn btn-touchid hidden" style="margin-top:10px;">👆 Sign in with Touch ID</button>
+
+        <p id="more-options-link" class="auth-link" style="text-align:center; margin-top:14px;">More sign-in options</p>
+      </div>
+
+      <div id="more-options" class="hidden">
+        <div class="divider"><span>or</span></div>
+
+        <div id="otp-form">
+          <p class="auth-sub">Sign in with a one-time code sent to your email.</p>
+          <input id="otp-email" type="email" placeholder="you@example.com" autocomplete="email" />
+          <div id="otp-code-row" class="hidden">
+            <input id="otp-code" type="text" inputmode="numeric" placeholder="6-digit code" maxlength="6" autocomplete="one-time-code" />
+          </div>
+          <button id="otp-request-btn" class="btn btn-primary">Send Code</button>
+          <button id="otp-verify-btn" class="btn btn-primary hidden">Verify Code</button>
+        </div>
+
+        <div class="divider"><span>or</span></div>
+
+        <div id="setup-form" class="hidden">
+          <p class="auth-sub">First time: choose a password to protect this app.</p>
+          <input id="setup-password" type="password" placeholder="Choose a password" autocomplete="new-password" />
+          <input id="setup-password-confirm" type="password" placeholder="Confirm password" autocomplete="new-password" />
+          <button id="setup-submit" class="btn btn-primary">Set Password &amp; Continue</button>
+        </div>
+
+        <div id="login-form">
+          <input id="login-password" type="password" placeholder="Family password" autocomplete="current-password" />
+          <button id="login-submit" class="btn btn-primary">Sign in with Password</button>
+          <p id="forgot-password-link" class="auth-link">Forgot password?</p>
+        </div>
+
+        <div id="password-reset-form" class="hidden">
+          <p class="auth-sub">Only an admin email can reset the password. Enter it to get a code.</p>
+          <input id="reset-email" type="email" placeholder="Admin email" autocomplete="email" />
+          <button id="reset-send-btn" class="btn btn-primary btn-small">Send Reset Code</button>
+          <div id="reset-fields" class="hidden">
+            <input id="reset-code" type="text" inputmode="numeric" placeholder="6-digit code" maxlength="6" autocomplete="one-time-code" />
+            <input id="reset-new-password" type="password" placeholder="New password" autocomplete="new-password" />
+            <button id="reset-submit-btn" class="btn btn-primary btn-small">Reset Password &amp; Sign In</button>
+          </div>
+        </div>
+      </div>
+
+      <p id="login-error" class="auth-error hidden"></p>
+    </div>
+  </div>
+
+  <script src="simplewebauthn-browser.min.js"></script>
+  <script src="login.js"></script>
+</body>
+</html>
