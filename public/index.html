@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kids Timetable</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== MAIN APP (always visible — no login wall) ===== -->
+  <div id="app" class="app">
+    <header class="app-header">
+      <h1>🗓️ Kids Timetable</h1>
+      <div class="child-tabs" id="child-tabs"></div>
+      <div class="header-actions">
+        <span id="role-badge" class="role-badge hidden"></span>
+        <button id="settings-btn" class="icon-btn" title="Profile">👤</button>
+      </div>
+    </header>
+
+    <nav class="view-tabs">
+      <button class="view-tab active" data-view="day">Today's Checklist</button>
+      <button class="view-tab" data-view="month">Month Overview</button>
+    </nav>
+
+    <!-- DAY VIEW -->
+    <section id="view-day" class="view">
+      <div class="day-nav">
+        <button id="day-prev" class="icon-btn">◀</button>
+        <input type="date" id="day-picker" />
+        <button id="day-next" class="icon-btn">▶</button>
+        <button id="day-today" class="btn btn-small">Today</button>
+      </div>
+
+      <div class="tasks-columns">
+        <div class="task-card">
+          <h2>Fixed Schedule</h2>
+          <div id="fixed-tasks" class="task-list"></div>
+        </div>
+        <div class="task-card">
+          <h2>Extra Activities</h2>
+          <div id="extra-tasks" class="task-list"></div>
+        </div>
+      </div>
+
+      <div class="points-summary" id="points-summary"></div>
+
+      <div class="save-bar">
+        <span id="unsaved-indicator" class="unsaved-indicator hidden">● Unsaved changes</span>
+        <div id="admin-code-fallback" class="admin-code-fallback hidden">
+          <input id="admin-code-input" type="password" placeholder="Admin code" autocomplete="off" />
+          <button id="admin-code-submit" class="btn btn-primary btn-small">Save with Code</button>
+        </div>
+        <button id="save-btn" class="btn btn-primary btn-small" disabled>👆 Save with Touch ID</button>
+      </div>
+    </section>
+
+    <!-- MONTH VIEW -->
+    <section id="view-month" class="view hidden">
+      <div class="month-nav">
+        <button id="month-prev" class="icon-btn">◀</button>
+        <span id="month-label"></span>
+        <button id="month-next" class="icon-btn">▶</button>
+      </div>
+
+      <div class="month-stats" id="month-stats"></div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+    </section>
+  </div>
+
+  <!-- ===== PROFILE MODAL ===== -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Profile</h2>
+        <button id="settings-close" class="icon-btn">✕</button>
+      </div>
+
+      <p id="profile-email" class="auth-sub" style="margin:0 0 10px;"></p>
+      <button id="logout-btn" class="btn btn-small">🚪 Log out</button>
+
+      <div id="profile-admin-section">
+        <h3>Change Password</h3>
+        <input id="change-current" type="password" placeholder="Current password" autocomplete="current-password" />
+        <input id="change-new" type="password" placeholder="New password" autocomplete="new-password" />
+        <button id="change-submit" class="btn btn-primary btn-small">Update Password</button>
+        <p id="change-error" class="auth-error hidden"></p>
+
+        <h3>Touch ID Devices</h3>
+        <div id="credentials-list" class="credentials-list"></div>
+        <button id="add-touchid-btn" class="btn btn-touchid btn-small">👆 Add Touch ID for this device</button>
+        <p id="webauthn-error" class="auth-error hidden"></p>
+        <p id="webauthn-success" class="auth-success hidden"></p>
+
+        <h3>Users</h3>
+        <p class="auth-sub" style="margin:0 0 10px;">Everyone who has signed in with Google or an email code. Grant or remove admin (write) access below.</p>
+        <div id="users-list" class="credentials-list"></div>
+        <p id="users-error" class="auth-error hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="simplewebauthn-browser.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

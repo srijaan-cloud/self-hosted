@@ -1,0 +1,26 @@
+{
+  "name": "kids-timetable-worker",
+  "version": "1.0.0",
+  "description": "Family disciplined timetable & points tracker for Lahari and NagaSourish (Cloudflare Worker edition)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply kids-timetable --local",
+    "db:migrate:remote": "wrangler d1 migrations apply kids-timetable --remote"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.2",
+    "hono": "^4.13.3",
+    "openid-client": "^6.8.7"
+  },
+  "devDependencies": {
+    "wrangler": "^4.125.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "workerd@1.20260820.1": true
+  }
+}
