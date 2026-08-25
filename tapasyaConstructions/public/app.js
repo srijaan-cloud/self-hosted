@@ -10,6 +10,13 @@ async function boot() {
     document.getElementById('new-vendor-btn').classList.add('hidden');
     document.getElementById('new-material-type-btn').classList.add('hidden');
   }
+  // Viewers/guests get the public showcase only — Vendors/Reports are internal
+  // financial pages, and "New Project" is a director action either way.
+  if (!isInternalRole(state.me.role)) {
+    document.getElementById('nav-vendors').classList.add('hidden');
+    document.getElementById('nav-reports').classList.add('hidden');
+    document.getElementById('new-project-btn').classList.add('hidden');
+  }
   setupNav();
   setupProjectModal();
   setupVendorModal();
@@ -41,10 +48,66 @@ function setupNav() {
 // ==================== DASHBOARD ====================
 
 async function loadDashboard() {
+  if (!isInternalRole(state.me.role)) {
+    await loadPublicShowcase();
+    return;
+  }
   state.dashboard = await api('/api/dashboard');
   renderKpiRow(state.dashboard.totals);
   renderProjectGrid(state.dashboard.projects);
   renderActivityFeed(state.dashboard.recentMaterials, state.dashboard.recentPayments);
+}
+
+// ==================== PUBLIC SHOWCASE (viewer / guest) ====================
+// No cost/payment data — just the project portfolio, marketing-style.
+
+async function loadPublicShowcase() {
+  const projects = await api('/api/public/projects');
+  const kpiRow = document.getElementById('kpi-row');
+  kpiRow.style.display = 'block';
+  kpiRow.innerHTML = `
+    <div class="showcase-hero">
+      <h1>🏗️ Our Projects</h1>
+      <p class="auth-sub">Explore Tapasya Constructions' ongoing and completed developments.</p>
+    </div>
+  `;
+  document.querySelector('#view-dashboard .section-card').classList.add('hidden');
+
+  const grid = document.getElementById('project-grid');
+  grid.className = 'showcase-grid';
+  if (projects.length === 0) {
+    grid.innerHTML = '<p class="empty-state">No projects published yet.</p>';
+    return;
+  }
+  const covers = {};
+  await Promise.all(
+    projects.map(async (p) => {
+      const media = await api(`/api/projects/${p.id}/media?category=floor_plan`);
+      covers[p.id] = media[0] || null;
+    })
+  );
+  grid.innerHTML = projects
+    .map((p) => {
+      const cover = covers[p.id];
+      const img = cover ? `background-image:url('/uploads/${cover.image_key}')` : '';
+      const priceLine =
+        p.status === 'completed' && p.sold_price_total
+          ? `Sold: ${formatCurrency(p.sold_price_total)}`
+          : p.price_per_sqft
+          ? `From ${formatCurrency(p.price_per_sqft)}/sq.ft`
+          : '';
+      return `
+        <a class="showcase-card" href="project.html?id=${p.id}">
+          <div class="sc-image" style="${img}">${cover ? '' : '🏗️'}</div>
+          <div class="sc-body">
+            <div class="sc-name">${p.name}</div>
+            <div class="sc-meta">${p.city || ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span></div>
+            ${priceLine ? `<div class="sc-price">${priceLine}</div>` : ''}
+          </div>
+        </a>
+      `;
+    })
+    .join('');
 }
 
 function renderKpiRow(totals) {

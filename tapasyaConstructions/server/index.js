@@ -263,10 +263,15 @@ app.post('/api/settings/background', requireDirector, async (c) => {
 
 // ---------- Generic CRUD factory ----------
 
-function crudRoutes({ path, table, fields, projectScoped = true, decorate }) {
+// internalOnly (default true): every resource below is cost/financial data —
+// materials, payments, labor, equipment, funding, vendors — none of it is meant
+// for the public-facing viewer/guest experience (see the showcase endpoints
+// further down for what viewers get instead: floor plans, reviews, pricing).
+function crudRoutes({ path, table, fields, projectScoped = true, decorate, internalOnly = true }) {
   const decorateRow = decorate || ((r) => r);
 
   app.get(`/api/${path}`, async (c) => {
+    if (internalOnly && c.get('session').role === 'viewer') return c.json({ error: 'forbidden' }, 403);
     const db = getDb(c.env);
     const projectId = c.req.query('project_id');
     let sql = `SELECT * FROM ${table}`;
@@ -295,6 +300,7 @@ function crudRoutes({ path, table, fields, projectScoped = true, decorate }) {
   });
 
   app.get(`/api/${path}/:id`, async (c) => {
+    if (internalOnly && c.get('session').role === 'viewer') return c.json({ error: 'forbidden' }, 403);
     const db = getDb(c.env);
     const row = await db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(c.req.param('id'));
     if (!row) return c.json({ error: 'not_found' }, 404);
@@ -303,6 +309,7 @@ function crudRoutes({ path, table, fields, projectScoped = true, decorate }) {
   });
 
   app.post(`/api/${path}`, async (c) => {
+    if (internalOnly && c.get('session').role === 'viewer') return c.json({ error: 'forbidden' }, 403);
     const body = await c.req.json();
     if (projectScoped && !(await canWriteProject(c, body.project_id))) return c.json({ error: 'forbidden' }, 403);
     if (!projectScoped && !canWriteRole(c.get('session').role)) return c.json({ error: 'forbidden' }, 403);
@@ -360,6 +367,8 @@ crudRoutes({
 // ---------- Projects ----------
 
 app.get('/api/projects', async (c) => {
+  // Includes total_budget — internal only. Viewers/guests use /api/public/projects.
+  if (c.get('session').role === 'viewer') return c.json({ error: 'forbidden' }, 403);
   const db = getDb(c.env);
   const ids = await accessibleProjectIds(c);
   let rows;
@@ -370,6 +379,7 @@ app.get('/api/projects', async (c) => {
 });
 
 app.get('/api/projects/:id', async (c) => {
+  if (c.get('session').role === 'viewer') return c.json({ error: 'forbidden' }, 403);
   if (!(await canAccessProject(c, c.req.param('id')))) return c.json({ error: 'forbidden' }, 403);
   const db = getDb(c.env);
   const row = await db.prepare('SELECT * FROM projects WHERE id = ?').get(c.req.param('id'));
@@ -380,6 +390,7 @@ app.get('/api/projects/:id', async (c) => {
 const PROJECT_FIELDS = [
   'name', 'client_name', 'site_address', 'city', 'start_date', 'expected_end_date',
   'actual_end_date', 'status', 'total_budget', 'description',
+  'price_per_sqft', 'total_area_sqft', 'sold_price_total', 'amenities',
 ];
 
 app.post('/api/projects', requireDirector, async (c) => {
@@ -465,6 +476,7 @@ const PAYMENT_FIELDS = [
 ];
 
 app.get('/api/payments', async (c) => {
+  if (c.get('session').role === 'viewer') return c.json({ error: 'forbidden' }, 403);
   const db = getDb(c.env);
   const projectId = c.req.query('project_id');
   const materialEntryId = c.req.query('material_entry_id');
@@ -538,6 +550,7 @@ app.delete('/api/payments/:id', async (c) => {
 // ---------- Dashboard ----------
 
 app.get('/api/dashboard', async (c) => {
+  if (c.get('session').role === 'viewer') return c.json({ error: 'forbidden' }, 403);
   const db = getDb(c.env);
   const ids = await accessibleProjectIds(c);
 
@@ -598,6 +611,94 @@ app.get('/api/dashboard', async (c) => {
   const recentPayments = await db.prepare('SELECT * FROM payments ORDER BY id DESC LIMIT 8').all();
 
   return c.json({ projects: projectSummaries, totals, recentMaterials, recentPayments });
+});
+
+// ---------- Public showcase (viewer/guest) ----------
+// What non-staff visitors see instead of the internal financial dashboard: no
+// cost/payment data at all, just project marketing content — floor plans and
+// progress photos for ongoing projects, floor plans/reviews/pricing for
+// completed ones. Deliberately open to every role (director/site_supervisor/
+// auditor can see it too, e.g. while managing it), not gated to viewer only.
+
+const PUBLIC_PROJECT_FIELDS = [
+  'id', 'name', 'client_name', 'city', 'status', 'description', 'start_date',
+  'expected_end_date', 'actual_end_date', 'price_per_sqft', 'total_area_sqft',
+  'sold_price_total', 'amenities',
+];
+
+function toPublicProject(row) {
+  const out = {};
+  PUBLIC_PROJECT_FIELDS.forEach((f) => (out[f] = row[f]));
+  return out;
+}
+
+app.get('/api/public/projects', async (c) => {
+  const db = getDb(c.env);
+  const rows = await db.prepare('SELECT * FROM projects ORDER BY id DESC').all();
+  return c.json(rows.map(toPublicProject));
+});
+
+app.get('/api/public/projects/:id', async (c) => {
+  const db = getDb(c.env);
+  const row = await db.prepare('SELECT * FROM projects WHERE id = ?').get(c.req.param('id'));
+  if (!row) return c.json({ error: 'not_found' }, 404);
+  return c.json(toPublicProject(row));
+});
+
+app.get('/api/projects/:id/media', async (c) => {
+  const db = getDb(c.env);
+  const category = c.req.query('category');
+  let sql = 'SELECT * FROM project_media WHERE project_id = ?';
+  const params = [c.req.param('id')];
+  if (category) {
+    sql += ' AND category = ?';
+    params.push(category);
+  }
+  sql += ' ORDER BY display_order, id';
+  return c.json(await db.prepare(sql).all(...params));
+});
+
+app.post('/api/projects/:id/media', async (c) => {
+  if (!(await canWriteProject(c, c.req.param('id')))) return c.json({ error: 'forbidden' }, 403);
+  const { category, image_key, title, caption, display_order } = await c.req.json();
+  if (!image_key) return c.json({ error: 'image_key is required (upload via /api/uploads first)' }, 400);
+  const db = getDb(c.env);
+  const res = await db
+    .prepare('INSERT INTO project_media (project_id, category, image_key, title, caption, display_order) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(c.req.param('id'), category || 'gallery', image_key, title || null, caption || null, display_order || 0);
+  return c.json(await db.prepare('SELECT * FROM project_media WHERE id = ?').get(res.lastInsertRowid));
+});
+
+app.delete('/api/projects/:id/media/:mediaId', async (c) => {
+  if (!(await canWriteProject(c, c.req.param('id')))) return c.json({ error: 'forbidden' }, 403);
+  const db = getDb(c.env);
+  await db.prepare('DELETE FROM project_media WHERE id = ? AND project_id = ?').run(c.req.param('mediaId'), c.req.param('id'));
+  return c.json({ ok: true });
+});
+
+app.get('/api/projects/:id/reviews', async (c) => {
+  const db = getDb(c.env);
+  return c.json(
+    await db.prepare('SELECT * FROM project_reviews WHERE project_id = ? ORDER BY date DESC, id DESC').all(c.req.param('id'))
+  );
+});
+
+app.post('/api/projects/:id/reviews', async (c) => {
+  if (!(await canWriteProject(c, c.req.param('id')))) return c.json({ error: 'forbidden' }, 403);
+  const { customer_name, rating, review_text, date } = await c.req.json();
+  if (!customer_name) return c.json({ error: 'customer_name is required' }, 400);
+  const db = getDb(c.env);
+  const res = await db
+    .prepare('INSERT INTO project_reviews (project_id, customer_name, rating, review_text, date) VALUES (?, ?, ?, ?, ?)')
+    .run(c.req.param('id'), customer_name, rating || 5, review_text || null, date || null);
+  return c.json(await db.prepare('SELECT * FROM project_reviews WHERE id = ?').get(res.lastInsertRowid));
+});
+
+app.delete('/api/projects/:id/reviews/:reviewId', async (c) => {
+  if (!(await canWriteProject(c, c.req.param('id')))) return c.json({ error: 'forbidden' }, 403);
+  const db = getDb(c.env);
+  await db.prepare('DELETE FROM project_reviews WHERE id = ? AND project_id = ?').run(c.req.param('reviewId'), c.req.param('id'));
+  return c.json({ ok: true });
 });
 
 // ---------- Uploads (R2) ----------
