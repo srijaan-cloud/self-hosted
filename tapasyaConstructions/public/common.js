@@ -40,7 +40,11 @@ function paymentModeOptionsHtml(selected) {
 }
 
 function roleLabel(role) {
-  return { director: 'Director', accountant: 'Accountant', site_engineer: 'Site Engineer' }[role] || role;
+  return { director: 'Director', site_supervisor: 'Site Supervisor', auditor: 'Auditor', viewer: 'Viewer' }[role] || role;
+}
+
+function canWriteRole(role) {
+  return role === 'director' || role === 'site_supervisor';
 }
 
 function statusLabel(status) {
