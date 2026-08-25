@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tapasya Constructions — Sign in</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="auth-screen">
+    <div class="auth-card">
+      <h1>🏗️ Tapasya Constructions</h1>
+      <p class="auth-sub">Project &amp; accounts management</p>
+
+      <div id="bootstrap-form" class="hidden">
+        <p class="auth-sub">First time setup: create the first director account.</p>
+        <label class="field-label">Your name</label>
+        <input id="bs-name" type="text" placeholder="e.g. V. Rao" />
+        <label class="field-label">Username</label>
+        <input id="bs-username" type="text" placeholder="e.g. vrao" autocomplete="username" />
+        <label class="field-label">Password</label>
+        <input id="bs-password" type="password" placeholder="Choose a password" autocomplete="new-password" />
+        <button id="bs-submit" class="btn btn-primary">Create Account &amp; Continue</button>
+      </div>
+
+      <div id="login-form">
+        <label class="field-label">Username</label>
+        <input id="login-username" type="text" placeholder="Username" autocomplete="username" />
+        <label class="field-label">Password</label>
+        <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" />
+        <button id="login-submit" class="btn btn-primary">Sign in</button>
+      </div>
+
+      <p id="auth-error" class="auth-error hidden"></p>
+    </div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>
