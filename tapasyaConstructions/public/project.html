@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project — Tapasya Constructions</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand"><a href="/" style="text-decoration:none; color:inherit;">🏗️ Tapasya Constructions</a></div>
+    <nav class="app-nav"><a href="/">← All Projects</a></nav>
+    <div class="header-actions">
+      <span id="role-badge" class="role-badge"></span>
+      <button id="logout-btn" class="icon-btn" title="Log out">🚪</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="section-header">
+      <h1 id="project-name">Loading…</h1>
+      <button id="edit-project-btn" class="btn btn-secondary btn-inline hidden">Edit Project</button>
+    </div>
+    <p id="project-meta" class="auth-sub" style="margin-top:-8px;"></p>
+
+    <div class="kpi-row" id="project-kpi-row"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="materials">Materials</button>
+      <button class="tab-btn" data-tab="payments">Payments</button>
+      <button class="tab-btn" data-tab="labor">Labor</button>
+      <button class="tab-btn" data-tab="equipment">Equipment</button>
+      <button class="tab-btn" data-tab="funding">Funding</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section id="tab-overview" class="tab-view">
+      <div class="section-card">
+        <h2>Description</h2>
+        <p id="project-description"></p>
+      </div>
+      <div class="section-card">
+        <h2>Timeline</h2>
+        <p id="project-timeline"></p>
+      </div>
+    </section>
+
+    <!-- MATERIALS -->
+    <section id="tab-materials" class="tab-view hidden">
+      <div class="section-header">
+        <h2>Material Entries</h2>
+        <button id="new-material-entry-btn" class="btn btn-primary btn-inline">+ Add Material Entry</button>
+      </div>
+      <div class="filter-row">
+        <select id="mat-filter-type"><option value="">All material types</option></select>
+        <select id="mat-filter-vendor"><option value="">All vendors</option></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Material</th><th>Vendor</th><th class="num">Ordered</th><th class="num">Received</th>
+              <th>Unit</th><th class="num">Rate</th><th class="num">Total</th><th class="num">Paid</th>
+              <th class="num">Balance</th><th>Status</th><th>Invoice #</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="materials-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAYMENTS -->
+    <section id="tab-payments" class="tab-view hidden">
+      <div class="section-header">
+        <h2>Payments</h2>
+        <button id="new-payment-btn" class="btn btn-primary btn-inline">+ Add Payment</button>
+      </div>
+      <div class="filter-row">
+        <select id="pay-filter-category">
+          <option value="">All categories</option>
+          <option value="material">Material</option>
+          <option value="labor">Labor</option>
+          <option value="equipment">Equipment</option>
+          <option value="transport">Transport</option>
+          <option value="misc">Miscellaneous</option>
+          <option value="advance">Advance</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Category</th><th class="num">Amount</th><th>Mode</th><th>Reference</th>
+              <th>Paid To</th><th>Paid By</th><th>Remarks</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="payments-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LABOR -->
+    <section id="tab-labor" class="tab-view hidden">
+      <div class="section-header">
+        <h2>Labor</h2>
+        <button id="new-labor-btn" class="btn btn-primary btn-inline">+ Add Labor Entry</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Trade</th><th>Contractor</th><th class="num">Workers</th><th class="num">Wage Rate</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th><th></th></tr>
+          </thead>
+          <tbody id="labor-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- EQUIPMENT -->
+    <section id="tab-equipment" class="tab-view hidden">
+      <div class="section-header">
+        <h2>Equipment</h2>
+        <button id="new-equipment-btn" class="btn btn-primary btn-inline">+ Add Equipment Entry</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Equipment</th><th>Vendor</th><th>From</th><th>To</th><th class="num">Rate</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th><th></th></tr>
+          </thead>
+          <tbody id="equipment-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FUNDING -->
+    <section id="tab-funding" class="tab-view hidden">
+      <div class="section-header">
+        <h2>Funding Received</h2>
+        <button id="new-funding-btn" class="btn btn-primary btn-inline">+ Add Funding Entry</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Source</th><th class="num">Amount</th><th>Mode</th><th>Reference</th><th>Remarks</th><th></th></tr></thead>
+          <tbody id="funding-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== MODALS ===== -->
+
+  <div id="edit-project-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header"><h2>Edit Project</h2><button class="icon-btn modal-close" data-modal="edit-project-modal">✕</button></div>
+      <div class="form-grid">
+        <div class="full"><label class="field-label">Project Name</label><input id="ep-name" type="text" /></div>
+        <div><label class="field-label">Client Name</label><input id="ep-client" type="text" /></div>
+        <div><label class="field-label">City</label><input id="ep-city" type="text" /></div>
+        <div class="full"><label class="field-label">Site Address</label><input id="ep-address" type="text" /></div>
+        <div><label class="field-label">Start Date</label><input id="ep-start" type="date" /></div>
+        <div><label class="field-label">Expected End Date</label><input id="ep-end" type="date" /></div>
+        <div>
+          <label class="field-label">Status</label>
+          <select id="ep-status">
+            <option value="planning">Planning</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="on_hold">On Hold</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div><label class="field-label">Total Budget (₹)</label><input id="ep-budget" type="number" step="0.01" /></div>
+      </div>
+      <label class="field-label">Description</label>
+      <textarea id="ep-description"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close" data-modal="edit-project-modal">Cancel</button>
+        <button id="ep-save" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="material-entry-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header"><h2 id="material-entry-modal-title">Add Material Entry</h2><button class="icon-btn modal-close" data-modal="material-entry-modal">✕</button></div>
+      <input type="hidden" id="me-id" />
+      <div class="form-grid">
+        <div><label class="field-label">Date</label><input id="me-date" type="date" /></div>
+        <div><label class="field-label">Material Type</label><select id="me-type"></select></div>
+        <div><label class="field-label">Vendor</label><select id="me-vendor"><option value="">— None —</option></select></div>
+        <div><label class="field-label">Unit</label><input id="me-unit" type="text" placeholder="kg / bags / sq.ft" /></div>
+        <div><label class="field-label">Quantity Ordered</label><input id="me-qty-ordered" type="number" step="0.01" /></div>
+        <div><label class="field-label">Quantity Received</label><input id="me-qty-received" type="number" step="0.01" /></div>
+        <div><label class="field-label">Rate per Unit (₹)</label><input id="me-rate" type="number" step="0.01" /></div>
+        <div><label class="field-label">Total Amount (₹)</label><input id="me-total" type="number" step="0.01" /></div>
+        <div><label class="field-label">Invoice Number</label><input id="me-invoice" type="text" /></div>
+        <div>
+          <label class="field-label">Status</label>
+          <select id="me-status">
+            <option value="ordered">Ordered</option>
+            <option value="partial">Partially Received</option>
+            <option value="received">Received</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <label class="field-label">Notes</label>
+      <textarea id="me-notes"></textarea>
+      <label class="field-label">Bill / Invoice Photo</label>
+      <input id="me-bill-file" type="file" accept="image/*,application/pdf" />
+      <p id="me-upload-status" class="auth-sub hidden"></p>
+      <p id="material-entry-modal-error" class="auth-error hidden"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close" data-modal="material-entry-modal">Cancel</button>
+        <button id="me-save" class="btn btn-primary">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="payment-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header"><h2>Add Payment</h2><button class="icon-btn modal-close" data-modal="payment-modal">✕</button></div>
+      <div class="form-grid">
+        <div><label class="field-label">Date</label><input id="pay-date" type="date" /></div>
+        <div><label class="field-label">Amount (₹)</label><input id="pay-amount" type="number" step="0.01" /></div>
+        <div>
+          <label class="field-label">Category</label>
+          <select id="pay-category">
+            <option value="material">Material</option>
+            <option value="labor">Labor</option>
+            <option value="equipment">Equipment</option>
+            <option value="transport">Transport</option>
+            <option value="misc">Miscellaneous</option>
+            <option value="advance">Advance</option>
+          </select>
+        </div>
+        <div><label class="field-label">Payment Mode</label><select id="pay-mode"></select></div>
+        <div id="pay-transaction-wrap"><label class="field-label">Transaction ID</label><input id="pay-transaction-id" type="text" /></div>
+        <div id="pay-cheque-wrap" class="hidden"><label class="field-label">Cheque Number</label><input id="pay-cheque-number" type="text" /></div>
+        <div id="pay-bank-wrap" class="hidden"><label class="field-label">Bank Name</label><input id="pay-bank-name" type="text" /></div>
+        <div><label class="field-label">Paid To</label><input id="pay-paid-to" type="text" /></div>
+        <div><label class="field-label">Paid By</label><input id="pay-paid-by" type="text" /></div>
+        <div class="full">
+          <label class="field-label">Link to Material Entry (optional)</label>
+          <select id="pay-material-entry"><option value="">— Not linked —</option></select>
+        </div>
+      </div>
+      <label class="field-label">Remarks</label>
+      <textarea id="pay-remarks"></textarea>
+      <label class="field-label">Receipt Photo</label>
+      <input id="pay-receipt-file" type="file" accept="image/*,application/pdf" />
+      <p id="pay-upload-status" class="auth-sub hidden"></p>
+      <p id="payment-modal-error" class="auth-error hidden"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close" data-modal="payment-modal">Cancel</button>
+        <button id="pay-save" class="btn btn-primary">Save Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="labor-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header"><h2>Add Labor Entry</h2><button class="icon-btn modal-close" data-modal="labor-modal">✕</button></div>
+      <div class="form-grid">
+        <div><label class="field-label">Date</label><input id="lb-date" type="date" /></div>
+        <div>
+          <label class="field-label">Trade</label>
+          <select id="lb-trade">
+            <option value="mason">Mason</option>
+            <option value="carpenter">Carpenter</option>
+            <option value="electrician">Electrician</option>
+            <option value="plumber">Plumber</option>
+            <option value="helper">Helper</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div><label class="field-label">Contractor Name</label><input id="lb-contractor" type="text" /></div>
+        <div><label class="field-label">Worker Count</label><input id="lb-count" type="number" /></div>
+        <div><label class="field-label">Wage Rate (₹/worker)</label><input id="lb-rate" type="number" step="0.01" /></div>
+        <div><label class="field-label">Total Amount (₹)</label><input id="lb-total" type="number" step="0.01" /></div>
+        <div><label class="field-label">Amount Paid (₹)</label><input id="lb-paid" type="number" step="0.01" /></div>
+      </div>
+      <label class="field-label">Notes</label>
+      <textarea id="lb-notes"></textarea>
+      <p id="labor-modal-error" class="auth-error hidden"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close" data-modal="labor-modal">Cancel</button>
+        <button id="lb-save" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="equipment-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header"><h2>Add Equipment Entry</h2><button class="icon-btn modal-close" data-modal="equipment-modal">✕</button></div>
+      <div class="form-grid">
+        <div class="full"><label class="field-label">Equipment Name</label><input id="eq-name" type="text" /></div>
+        <div><label class="field-label">Vendor</label><input id="eq-vendor" type="text" /></div>
+        <div><label class="field-label">From Date</label><input id="eq-from" type="date" /></div>
+        <div><label class="field-label">To Date</label><input id="eq-to" type="date" /></div>
+        <div><label class="field-label">Rate (₹)</label><input id="eq-rate" type="number" step="0.01" /></div>
+        <div>
+          <label class="field-label">Rate Unit</label>
+          <select id="eq-rate-unit">
+            <option value="per_day">Per Day</option>
+            <option value="per_hour">Per Hour</option>
+            <option value="per_trip">Per Trip</option>
+          </select>
+        </div>
+        <div><label class="field-label">Total Amount (₹)</label><input id="eq-total" type="number" step="0.01" /></div>
+        <div><label class="field-label">Amount Paid (₹)</label><input id="eq-paid" type="number" step="0.01" /></div>
+      </div>
+      <label class="field-label">Notes</label>
+      <textarea id="eq-notes"></textarea>
+      <p id="equipment-modal-error" class="auth-error hidden"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close" data-modal="equipment-modal">Cancel</button>
+        <button id="eq-save" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="funding-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header"><h2>Add Funding Entry</h2><button class="icon-btn modal-close" data-modal="funding-modal">✕</button></div>
+      <div class="form-grid">
+        <div><label class="field-label">Date</label><input id="fd-date" type="date" /></div>
+        <div>
+          <label class="field-label">Source</label>
+          <select id="fd-source">
+            <option value="client">Client</option>
+            <option value="owner">Owner</option>
+            <option value="loan">Loan</option>
+          </select>
+        </div>
+        <div><label class="field-label">Amount (₹)</label><input id="fd-amount" type="number" step="0.01" /></div>
+        <div><label class="field-label">Payment Mode</label><select id="fd-mode"></select></div>
+        <div class="full"><label class="field-label">Transaction ID</label><input id="fd-transaction-id" type="text" /></div>
+      </div>
+      <label class="field-label">Remarks</label>
+      <textarea id="fd-remarks"></textarea>
+      <p id="funding-modal-error" class="auth-error hidden"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close" data-modal="funding-modal">Cancel</button>
+        <button id="fd-save" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="project.js"></script>
+</body>
+</html>
