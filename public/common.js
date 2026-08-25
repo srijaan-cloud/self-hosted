@@ -47,6 +47,18 @@ function canWriteRole(role) {
   return role === 'director' || role === 'site_supervisor';
 }
 
+// viewer (default self-service login, and the anonymous guest skip) gets the
+// public showcase only — no cost/payment data. Everyone else (director/
+// site_supervisor/auditor) is internal staff.
+function isInternalRole(role) {
+  return role !== 'viewer';
+}
+
+function starRating(n) {
+  n = Math.max(0, Math.min(5, Math.round(n || 0)));
+  return '★'.repeat(n) + '☆'.repeat(5 - n);
+}
+
 function statusLabel(status) {
   return { planning: 'Planning', ongoing: 'Ongoing', on_hold: 'On Hold', completed: 'Completed' }[status] || status;
 }

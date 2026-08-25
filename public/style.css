@@ -232,6 +232,46 @@ td.balance-clear { color: var(--green); }
 .activity-item:last-child { border-bottom: none; }
 .activity-item .a-meta { color: var(--ink-soft); font-size: 0.78rem; }
 .mode-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; background: var(--accent2-soft); color: var(--accent2); }
+
+/* ---------- Public showcase ---------- */
+.showcase-hero { text-align: center; margin: 8px 0 28px; }
+.showcase-hero h1 { font-size: 1.6rem; margin-bottom: 6px; }
+
+.showcase-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.showcase-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--ink);
+  display: block;
+}
+.showcase-card .sc-image { height: 170px; background: var(--accent2-soft) center/cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+.showcase-card .sc-body { padding: 16px 18px; }
+.showcase-card .sc-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
+.showcase-card .sc-meta { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 10px; }
+.showcase-card .sc-price { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
+
+.media-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 10px 0; }
+.media-gallery img { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; box-shadow: var(--shadow); }
+.media-item { position: relative; }
+.media-item .media-remove {
+  position: absolute; top: 6px; right: 6px; background: var(--red); color: #fff; border: none;
+  border-radius: 999px; width: 22px; height: 22px; font-size: 0.75rem; line-height: 1; cursor: pointer;
+}
+.media-item .media-caption { font-size: 0.76rem; color: var(--ink-soft); margin-top: 4px; }
+
+.review-card { background: var(--bg); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+.review-card .rc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.review-card .rc-name { font-weight: 600; font-size: 0.9rem; }
+.review-card .rc-stars { color: var(--amber); font-size: 0.9rem; }
+.review-card .rc-text { font-size: 0.85rem; color: var(--ink-soft); }
+
+.price-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 10px 0; }
+.price-summary .ps-item { background: var(--bg); border-radius: 10px; padding: 12px 14px; }
+.price-summary .ps-label { font-size: 0.74rem; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 4px; }
+.price-summary .ps-value { font-size: 1.15rem; font-weight: 700; color: var(--accent); }
 .divider { border: none; border-top: 1px solid var(--line); margin: 18px 0; }
 
 @media (max-width: 640px) {

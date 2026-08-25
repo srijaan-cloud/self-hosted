@@ -13,13 +13,38 @@ async function boot() {
     return;
   }
   state.me = await setupHeader();
+  setupTabs();
+  setupShowcaseTab();
+  setupReviewModal();
+
+  if (!isInternalRole(state.me.role)) {
+    // Viewer/guest: only the public showcase — internal tabs never even render,
+    // and internal endpoints (materials/payments/dashboard/etc.) would 403 anyway.
+    state.canWrite = false;
+    document.querySelectorAll('.internal-tab').forEach((el) => el.classList.add('hidden'));
+    document.getElementById('showcase-tab-btn').classList.add('active');
+    document.getElementById('tab-showcase').classList.remove('hidden');
+    await loadPublicProjectView();
+    await loadShowcase();
+    return;
+  }
+
   state.canWrite = canWriteRole(state.me.role);
   if (!state.canWrite) {
-    ['new-material-entry-btn', 'new-payment-btn', 'new-labor-btn', 'new-equipment-btn', 'new-funding-btn'].forEach((id) =>
+    ['new-material-entry-btn', 'new-payment-btn', 'new-labor-btn', 'new-equipment-btn', 'new-funding-btn', 'new-review-btn'].forEach((id) =>
       document.getElementById(id).classList.add('hidden')
     );
+  } else {
+    document.getElementById('new-review-btn').classList.remove('hidden');
+    document.getElementById('floor-plan-upload-wrap').classList.remove('hidden');
+    document.getElementById('progress-upload-wrap').classList.remove('hidden');
   }
-  setupTabs();
+  // Pricing is a core project field (PATCH /api/projects/:id), same director-only
+  // gate as editing the project's name/budget/status — site_supervisors can manage
+  // media/reviews for their project but not the published price.
+  if (state.me.role === 'director') {
+    document.getElementById('showcase-price-edit').classList.remove('hidden');
+  }
   setupEditProjectModal();
   setupMaterialEntryModal();
   setupPaymentModal();
@@ -61,8 +86,21 @@ function setupTabs() {
       if (tab === 'labor') await loadLabor();
       if (tab === 'equipment') await loadEquipment();
       if (tab === 'funding') await loadFunding();
+      if (tab === 'showcase') await loadShowcase();
     });
   });
+}
+
+// ==================== PUBLIC SHOWCASE VIEW (viewer / guest) ====================
+
+async function loadPublicProjectView() {
+  const p = await api(`/api/public/projects/${state.projectId}`);
+  state.project = p;
+  document.title = `${p.name} — Tapasya Constructions`;
+  document.getElementById('project-name').textContent = p.name;
+  document.getElementById('project-meta').innerHTML =
+    `${p.client_name || ''}${p.city ? ' · ' + p.city : ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span>`;
+  document.getElementById('project-kpi-row').innerHTML = '';
 }
 
 // ==================== OVERVIEW ====================
@@ -589,6 +627,181 @@ function setupFundingModal() {
     closeModal('funding-modal');
     await loadFunding();
     await loadProject();
+  });
+}
+
+// ==================== SHOWCASE / PUBLIC PAGE ====================
+// Shown to everyone (internal staff managing it, and viewers/guests reading it).
+// Ongoing projects emphasize floor plans + progress photos; completed projects
+// add customer reviews and the sold price / price-per-sqft summary.
+
+function isCompleted() {
+  return state.project && state.project.status === 'completed';
+}
+
+async function loadShowcase() {
+  const p = state.project;
+  renderPriceSummary(p);
+
+  document.getElementById('progress-section').classList.toggle('hidden', isCompleted());
+  document.getElementById('reviews-section').classList.toggle('hidden', !isCompleted());
+
+  const [floorPlans, progress] = await Promise.all([
+    api(`/api/projects/${state.projectId}/media?category=floor_plan`),
+    api(`/api/projects/${state.projectId}/media?category=progress`),
+  ]);
+  renderMediaGallery('floor-plans-gallery', floorPlans);
+  renderMediaGallery('progress-gallery', progress);
+
+  if (isCompleted()) {
+    const reviews = await api(`/api/projects/${state.projectId}/reviews`);
+    renderReviews(reviews);
+  }
+}
+
+function renderPriceSummary(p) {
+  const items = [];
+  if (p.price_per_sqft) items.push(['Price per Sq.ft', formatCurrency(p.price_per_sqft)]);
+  if (p.total_area_sqft) items.push(['Total Area', `${p.total_area_sqft.toLocaleString('en-IN')} sq.ft`]);
+  if (isCompleted() && p.sold_price_total) items.push(['Sold Price', formatCurrency(p.sold_price_total)]);
+  const view = document.getElementById('showcase-price-view');
+  view.innerHTML =
+    items.length === 0
+      ? '<p class="empty-state">No pricing published yet.</p>'
+      : items.map(([label, value]) => `<div class="ps-item"><div class="ps-label">${label}</div><div class="ps-value">${value}</div></div>`).join('');
+  if (p.amenities) {
+    view.innerHTML += `<div class="ps-item full" style="grid-column:1/-1;"><div class="ps-label">Amenities</div><div class="ps-value" style="font-size:0.9rem;">${p.amenities}</div></div>`;
+  }
+  if (document.getElementById('sh-price-sqft')) {
+    document.getElementById('sh-price-sqft').value = p.price_per_sqft || '';
+    document.getElementById('sh-total-area').value = p.total_area_sqft || '';
+    document.getElementById('sh-sold-price').value = p.sold_price_total || '';
+    document.getElementById('sh-amenities').value = p.amenities || '';
+  }
+}
+
+function renderMediaGallery(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (items.length === 0) {
+    el.innerHTML = '<p class="empty-state">None uploaded yet.</p>';
+    return;
+  }
+  el.innerHTML = items
+    .map(
+      (m) => `<div class="media-item">
+        <img src="/uploads/${m.image_key}" alt="${m.title || ''}" />
+        ${state.canWrite ? `<button class="media-remove remove-media" data-id="${m.id}">✕</button>` : ''}
+        ${m.caption ? `<div class="media-caption">${m.caption}</div>` : ''}
+      </div>`
+    )
+    .join('');
+  el.querySelectorAll('.remove-media').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Remove this image?')) return;
+      await api(`/api/projects/${state.projectId}/media/${btn.dataset.id}`, { method: 'DELETE' });
+      await loadShowcase();
+    });
+  });
+}
+
+function renderReviews(reviews) {
+  const el = document.getElementById('reviews-list');
+  if (reviews.length === 0) {
+    el.innerHTML = '<p class="empty-state">No reviews yet.</p>';
+    return;
+  }
+  el.innerHTML = reviews
+    .map(
+      (r) => `<div class="review-card">
+        <div class="rc-top">
+          <span class="rc-name">${r.customer_name}${r.date ? ' — ' + formatDate(r.date) : ''}</span>
+          <span class="rc-stars">${starRating(r.rating)}</span>
+        </div>
+        ${r.review_text ? `<div class="rc-text">${r.review_text}</div>` : ''}
+        ${state.canWrite ? `<button class="btn btn-small btn-danger remove-review" data-id="${r.id}" style="margin-top:8px;">Delete</button>` : ''}
+      </div>`
+    )
+    .join('');
+  el.querySelectorAll('.remove-review').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this review?')) return;
+      await api(`/api/projects/${state.projectId}/reviews/${btn.dataset.id}`, { method: 'DELETE' });
+      await loadShowcase();
+    });
+  });
+}
+
+async function uploadMedia(fileInput, category) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  const uploadRes = await fetch('/api/uploads', { method: 'POST', body: form });
+  const uploadData = await uploadRes.json().catch(() => ({}));
+  if (!uploadRes.ok) {
+    alert(uploadData.error || 'Upload failed');
+    return;
+  }
+  await api(`/api/projects/${state.projectId}/media`, {
+    method: 'POST',
+    body: JSON.stringify({ category, image_key: uploadData.key }),
+  });
+  fileInput.value = '';
+  await loadShowcase();
+}
+
+function setupShowcaseTab() {
+  const floorPlanInput = document.getElementById('floor-plan-file');
+  if (floorPlanInput) floorPlanInput.addEventListener('change', () => uploadMedia(floorPlanInput, 'floor_plan'));
+  const progressInput = document.getElementById('progress-file');
+  if (progressInput) progressInput.addEventListener('change', () => uploadMedia(progressInput, 'progress'));
+
+  const priceSave = document.getElementById('sh-price-save');
+  if (priceSave) {
+    priceSave.addEventListener('click', async () => {
+      await api(`/api/projects/${state.projectId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          price_per_sqft: parseFloat(document.getElementById('sh-price-sqft').value) || null,
+          total_area_sqft: parseFloat(document.getElementById('sh-total-area').value) || null,
+          sold_price_total: parseFloat(document.getElementById('sh-sold-price').value) || null,
+          amenities: document.getElementById('sh-amenities').value.trim(),
+        }),
+      });
+      state.project = await api(`/api/projects/${state.projectId}`);
+      renderPriceSummary(state.project);
+    });
+  }
+}
+
+function setupReviewModal() {
+  const btn = document.getElementById('new-review-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    document.getElementById('rv-name').value = '';
+    document.getElementById('rv-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('rv-rating').value = '5';
+    document.getElementById('rv-text').value = '';
+    document.getElementById('review-modal-error').classList.add('hidden');
+    openModal('review-modal');
+  });
+  document.getElementById('rv-save').addEventListener('click', async () => {
+    const errEl = document.getElementById('review-modal-error');
+    errEl.classList.add('hidden');
+    const body = {
+      customer_name: document.getElementById('rv-name').value.trim(),
+      date: document.getElementById('rv-date').value,
+      rating: Number(document.getElementById('rv-rating').value),
+      review_text: document.getElementById('rv-text').value.trim(),
+    };
+    if (!body.customer_name) {
+      errEl.textContent = 'Customer name is required';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    await api(`/api/projects/${state.projectId}/reviews`, { method: 'POST', body: JSON.stringify(body) });
+    closeModal('review-modal');
+    await loadShowcase();
   });
 }
 
