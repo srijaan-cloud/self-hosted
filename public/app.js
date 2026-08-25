@@ -1,4 +1,4 @@
-const state = { me: null, dashboard: null };
+const state = { me: null, dashboard: null, allProjects: [] };
 
 async function boot() {
   state.me = await setupHeader();
@@ -6,11 +6,16 @@ async function boot() {
     document.getElementById('nav-settings').classList.remove('hidden');
     document.getElementById('new-project-btn').classList.remove('hidden');
   }
+  if (!canWriteRole(state.me.role)) {
+    document.getElementById('new-vendor-btn').classList.add('hidden');
+    document.getElementById('new-material-type-btn').classList.add('hidden');
+  }
   setupNav();
   setupProjectModal();
   setupVendorModal();
   setupStaffModal();
   setupMaterialTypeModal();
+  setupBackgroundUpload();
   document.getElementById('export-csv-btn').addEventListener('click', exportReportsCsv);
   await loadDashboard();
 }
@@ -154,12 +159,13 @@ async function loadVendors() {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No vendors yet.</td></tr>';
     return;
   }
+  const canWrite = canWriteRole(state.me.role);
   tbody.innerHTML = vendors
     .map(
       (v) => `<tr>
         <td>${v.name}</td><td>${v.contact_person || '—'}</td><td>${v.phone || '—'}</td>
         <td>${v.email || '—'}</td><td>${v.gst_number || '—'}</td>
-        <td><button class="btn btn-small btn-danger delete-vendor" data-id="${v.id}">Delete</button></td>
+        <td>${canWrite ? `<button class="btn btn-small btn-danger delete-vendor" data-id="${v.id}">Delete</button>` : ''}</td>
       </tr>`
     )
     .join('');
@@ -243,20 +249,84 @@ function exportReportsCsv() {
 // ==================== SETTINGS ====================
 
 async function loadSettings() {
-  await Promise.all([loadStaff(), loadMaterialTypesTable()]);
+  if (state.allProjects.length === 0) state.allProjects = await api('/api/projects');
+  await Promise.all([loadUsers(), loadMaterialTypesTable()]);
 }
 
-async function loadStaff() {
-  const staff = await api('/api/staff');
-  document.getElementById('staff-tbody').innerHTML = staff
-    .map((s) => `<tr><td>${s.name}</td><td>${s.username}</td><td>${roleLabel(s.role)}</td><td>${formatDate(s.created_at?.slice(0, 10))}</td></tr>`)
+async function loadUsers() {
+  const users = await api('/api/users');
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = users
+    .map((u) => {
+      const isMe = u.id === state.me.userId;
+      const needsScope = u.role === 'site_supervisor' || u.role === 'auditor';
+      const scopeControl = needsScope
+        ? `<label style="display:flex; align-items:center; gap:6px; font-size:0.82rem;">
+             <input type="checkbox" class="all-projects-toggle" data-id="${u.id}" style="width:auto; margin:0;" ${u.all_projects_access ? 'checked' : ''} /> All projects
+           </label>
+           ${!u.all_projects_access ? `<button class="btn btn-small btn-secondary manage-access" data-id="${u.id}" data-name="${u.name}">Manage Projects</button>` : ''}`
+        : '<span style="color:var(--ink-soft);">—</span>';
+      return `<tr>
+        <td>${u.name}${isMe ? ' (you)' : ''}</td>
+        <td>${u.email || u.username || '—'}</td>
+        <td>
+          <select class="role-select" data-id="${u.id}" ${isMe ? 'disabled' : ''}>
+            ${['director', 'site_supervisor', 'auditor', 'viewer'].map((r) => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${roleLabel(r)}</option>`).join('')}
+          </select>
+        </td>
+        <td>${scopeControl}</td>
+        <td>${u.last_login ? formatDate(u.last_login.slice(0, 10)) : formatDate(u.created_at?.slice(0, 10))}</td>
+      </tr>`;
+    })
     .join('');
+
+  tbody.querySelectorAll('.role-select').forEach((sel) => {
+    sel.addEventListener('change', async () => {
+      await api(`/api/users/${sel.dataset.id}/role`, { method: 'PATCH', body: JSON.stringify({ role: sel.value, all_projects_access: false }) });
+      await loadUsers();
+    });
+  });
+  tbody.querySelectorAll('.all-projects-toggle').forEach((cb) => {
+    cb.addEventListener('change', async () => {
+      const role = tbody.querySelector(`.role-select[data-id="${cb.dataset.id}"]`).value;
+      await api(`/api/users/${cb.dataset.id}/role`, { method: 'PATCH', body: JSON.stringify({ role, all_projects_access: cb.checked }) });
+      await loadUsers();
+    });
+  });
+  tbody.querySelectorAll('.manage-access').forEach((btn) => {
+    btn.addEventListener('click', () => openProjectAccessModal(btn.dataset.id, btn.dataset.name));
+  });
+}
+
+async function openProjectAccessModal(userId, userName) {
+  document.getElementById('pa-user-name').textContent = `${userName} — project access`;
+  const assigned = await api(`/api/users/${userId}/assignments`);
+  const assignedSet = new Set(assigned.map(String));
+  document.getElementById('pa-project-list').innerHTML = state.allProjects
+    .map(
+      (p) => `<label style="display:flex; align-items:center; gap:8px; padding:6px 0;">
+        <input type="checkbox" class="pa-checkbox" data-project="${p.id}" style="width:auto; margin:0;" ${assignedSet.has(String(p.id)) ? 'checked' : ''} />
+        ${p.name}
+      </label>`
+    )
+    .join('');
+  document.querySelectorAll('.pa-checkbox').forEach((cb) => {
+    cb.addEventListener('change', async () => {
+      if (cb.checked) {
+        await api(`/api/users/${userId}/assignments`, { method: 'POST', body: JSON.stringify({ project_id: Number(cb.dataset.project) }) });
+      } else {
+        await api(`/api/users/${userId}/assignments/${cb.dataset.project}`, { method: 'DELETE' });
+      }
+    });
+  });
+  openModal('project-access-modal');
 }
 
 function setupStaffModal() {
   document.getElementById('new-staff-btn').addEventListener('click', () => {
     ['sm-name', 'sm-username', 'sm-password'].forEach((id) => (document.getElementById(id).value = ''));
-    document.getElementById('sm-role').value = 'site_engineer';
+    document.getElementById('sm-role').value = 'site_supervisor';
+    document.getElementById('sm-all-projects').checked = false;
     document.getElementById('staff-modal-error').classList.add('hidden');
     openModal('staff-modal');
   });
@@ -268,14 +338,40 @@ function setupStaffModal() {
       username: document.getElementById('sm-username').value.trim(),
       password: document.getElementById('sm-password').value,
       role: document.getElementById('sm-role').value,
+      all_projects_access: document.getElementById('sm-all-projects').checked,
     };
     try {
-      await api('/api/staff', { method: 'POST', body: JSON.stringify(body) });
+      await api('/api/users', { method: 'POST', body: JSON.stringify(body) });
       closeModal('staff-modal');
-      await loadStaff();
+      await loadUsers();
     } catch (e) {
       errEl.textContent = e.message;
       errEl.classList.remove('hidden');
+    }
+  });
+}
+
+function setupBackgroundUpload() {
+  const input = document.getElementById('bg-file-input');
+  if (!input) return;
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('bg-upload-status');
+    statusEl.textContent = 'Uploading…';
+    statusEl.classList.remove('hidden');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/settings/background', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      statusEl.textContent = 'Background updated.';
+      document.querySelectorAll('.bg-layer').forEach((el) => {
+        el.style.backgroundImage = `url('/api/settings/background-image?t=${Date.now()}')`;
+      });
+    } catch (e) {
+      statusEl.textContent = e.message;
     }
   });
 }

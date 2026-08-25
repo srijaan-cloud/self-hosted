@@ -47,6 +47,24 @@ body {
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
+  position: relative;
+}
+
+/* Admin-configurable background (Profile/Settings → Background Image). Silently
+   invisible if none has been set — a 404 background-image just shows nothing. */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url('/api/settings/background-image');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
+}
+@media (prefers-color-scheme: dark) {
+  .bg-layer { opacity: 0.14; }
 }
 
 .hidden { display: none !important; }
@@ -101,6 +119,11 @@ label.field-label { display: block; font-size: 0.78rem; color: var(--ink-soft); 
 }
 .btn-primary { background: var(--accent); color: white; }
 .btn-secondary { background: var(--accent2-soft); color: var(--accent2); }
+.btn-oauth { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-oauth .btn-icon { display: flex; flex-shrink: 0; }
+.btn-oauth .btn-icon svg { width: 18px; height: 18px; display: block; }
+.btn-google { background: #fff; color: #3c4043; border: 1px solid #dadce0; }
+.btn-google:hover { background: #f7f8f8; }
 .btn-danger { background: var(--red-soft); color: var(--red); }
 .btn-small { width: auto; padding: 8px 14px; font-size: 0.82rem; }
 .btn-inline { width: auto; display: inline-block; }

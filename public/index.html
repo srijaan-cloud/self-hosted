@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="bg-layer"></div>
   <header class="app-header">
     <div class="brand"><span class="logo">🏗️</span> Tapasya Constructions</div>
     <nav class="app-nav">
@@ -75,14 +76,26 @@
     <!-- ===== SETTINGS VIEW (director only) ===== -->
     <section id="view-settings" class="view hidden">
       <div class="section-card">
+        <h2>Background Image</h2>
+        <p class="auth-sub" style="margin:0 0 10px;">Shown very faintly behind every page. Applies site-wide immediately.</p>
+        <input id="bg-file-input" type="file" accept="image/*" />
+        <p id="bg-upload-status" class="auth-sub hidden"></p>
+      </div>
+
+      <div class="section-card">
         <div class="section-header">
-          <h2>Staff Accounts</h2>
-          <button id="new-staff-btn" class="btn btn-primary btn-inline">+ Add Staff</button>
+          <h2>Users</h2>
+          <button id="new-staff-btn" class="btn btn-primary btn-inline">+ Add Staff Login</button>
         </div>
+        <p class="auth-sub" style="margin:0 0 10px;">
+          Anyone can sign in with Google (view-only by default). Promote them here to Site Supervisor
+          (can edit their assigned project(s)) or Auditor (read-only, scoped project(s) or all) — or add a
+          username/password staff login directly below for people without Gmail.
+        </p>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Added</th></tr></thead>
-            <tbody id="staff-tbody"></tbody>
+            <thead><tr><th>Name</th><th>Email / Username</th><th>Role</th><th>Project Access</th><th>Last Active</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -158,7 +171,7 @@
 
   <div id="staff-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="modal-header"><h2>Add Staff</h2><button class="icon-btn modal-close" data-modal="staff-modal">✕</button></div>
+      <div class="modal-header"><h2>Add Staff Login</h2><button class="icon-btn modal-close" data-modal="staff-modal">✕</button></div>
       <div class="form-grid">
         <div><label class="field-label">Name</label><input id="sm-name" type="text" /></div>
         <div><label class="field-label">Username</label><input id="sm-username" type="text" /></div>
@@ -166,16 +179,31 @@
         <div>
           <label class="field-label">Role</label>
           <select id="sm-role">
-            <option value="site_engineer">Site Engineer</option>
-            <option value="accountant">Accountant</option>
+            <option value="site_supervisor">Site Supervisor</option>
+            <option value="auditor">Auditor</option>
+            <option value="viewer">Viewer</option>
             <option value="director">Director</option>
           </select>
         </div>
       </div>
+      <label class="field-label" style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+        <input id="sm-all-projects" type="checkbox" style="width:auto; margin:0;" /> All projects (otherwise assign specific ones after creating)
+      </label>
       <p id="staff-modal-error" class="auth-error hidden"></p>
       <div class="modal-actions">
         <button class="btn btn-secondary modal-close" data-modal="staff-modal">Cancel</button>
         <button id="sm-save" class="btn btn-primary">Add Staff</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="project-access-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header"><h2>Project Access</h2><button class="icon-btn modal-close" data-modal="project-access-modal">✕</button></div>
+      <p class="auth-sub" id="pa-user-name" style="margin:0 0 10px;"></p>
+      <div id="pa-project-list"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary modal-close" data-modal="project-access-modal">Done</button>
       </div>
     </div>
   </div>

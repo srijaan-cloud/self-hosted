@@ -16,6 +16,18 @@ html_handling = "none"
 pattern = "tapasyaconstructions.klmn2.com"
 custom_domain = true
 
+[vars]
+PUBLIC_BASE_URL = "https://tapasyaconstructions.klmn2.com"
+# Reuses the same Google OAuth client as kids-timetable-worker — its redirect URI
+# list needs "https://tapasyaconstructions.klmn2.com/auth/google/callback" added
+# in Google Cloud Console. GOOGLE_CLIENT_SECRET is set separately via
+# `npx wrangler secret put GOOGLE_CLIENT_SECRET` (this Worker's own secret, even
+# though the client ID is shared).
+GOOGLE_CLIENT_ID = "980056554331-55l48p5mifq9fv9no7a3gf1hl4dko54i.apps.googleusercontent.com"
+# Sender for one-time-code emails, sent via Resend (RESEND_API_KEY secret, set via
+# `npx wrangler secret put RESEND_API_KEY`). Domain must be verified in Resend.
+RESEND_FROM_EMAIL = "Tapasya Constructions <login@klmn2.com>"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "tapasya-constructions"

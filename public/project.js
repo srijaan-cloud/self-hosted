@@ -13,6 +13,12 @@ async function boot() {
     return;
   }
   state.me = await setupHeader();
+  state.canWrite = canWriteRole(state.me.role);
+  if (!state.canWrite) {
+    ['new-material-entry-btn', 'new-payment-btn', 'new-labor-btn', 'new-equipment-btn', 'new-funding-btn'].forEach((id) =>
+      document.getElementById(id).classList.add('hidden')
+    );
+  }
   setupTabs();
   setupEditProjectModal();
   setupMaterialEntryModal();
@@ -163,7 +169,7 @@ function renderMaterialsTable() {
         <td class="num">${formatCurrency(m.amount_paid)}</td>
         <td class="num ${m.amount_balance > 0 ? 'balance-due' : 'balance-clear'}">${formatCurrency(m.amount_balance)}</td>
         <td>${m.status}</td><td>${m.invoice_number || '—'}</td>
-        <td><button class="btn btn-small btn-secondary edit-material" data-id="${m.id}">Edit</button></td>
+        <td>${state.canWrite ? `<button class="btn btn-small btn-secondary edit-material" data-id="${m.id}">Edit</button>` : ''}</td>
       </tr>`
     )
     .join('');
@@ -291,7 +297,7 @@ async function loadPayments() {
         <td>${formatDate(p.date)}</td><td>${p.category}</td><td class="num">${formatCurrency(p.amount)}</td>
         <td><span class="mode-pill">${paymentModeLabel(p.payment_mode)}</span></td><td>${ref}</td>
         <td>${p.paid_to || '—'}</td><td>${p.paid_by || '—'}</td><td>${p.remarks || '—'}</td>
-        <td><button class="btn btn-small btn-danger delete-payment" data-id="${p.id}">Delete</button></td>
+        <td>${state.canWrite ? `<button class="btn btn-small btn-danger delete-payment" data-id="${p.id}">Delete</button>` : ''}</td>
       </tr>`;
     })
     .join('');
@@ -405,7 +411,7 @@ async function loadLabor() {
         <td class="num">${l.worker_count}</td><td class="num">${formatCurrency(l.wage_rate)}</td>
         <td class="num">${formatCurrency(l.amount_total)}</td><td class="num">${formatCurrency(l.amount_paid)}</td>
         <td class="num ${l.amount_balance > 0 ? 'balance-due' : 'balance-clear'}">${formatCurrency(l.amount_balance)}</td>
-        <td><button class="btn btn-small btn-danger delete-labor" data-id="${l.id}">Delete</button></td>
+        <td>${state.canWrite ? `<button class="btn btn-small btn-danger delete-labor" data-id="${l.id}">Delete</button>` : ''}</td>
       </tr>`
     )
     .join('');
@@ -475,7 +481,7 @@ async function loadEquipment() {
         <td class="num">${formatCurrency(e.rate)}/${e.rate_unit.replace('per_', '')}</td>
         <td class="num">${formatCurrency(e.amount_total)}</td><td class="num">${formatCurrency(e.amount_paid)}</td>
         <td class="num ${e.amount_balance > 0 ? 'balance-due' : 'balance-clear'}">${formatCurrency(e.amount_balance)}</td>
-        <td><button class="btn btn-small btn-danger delete-equipment" data-id="${e.id}">Delete</button></td>
+        <td>${state.canWrite ? `<button class="btn btn-small btn-danger delete-equipment" data-id="${e.id}">Delete</button>` : ''}</td>
       </tr>`
     )
     .join('');
@@ -539,7 +545,7 @@ async function loadFunding() {
         <td>${formatDate(f.date)}</td><td>${f.source}</td><td class="num">${formatCurrency(f.amount)}</td>
         <td><span class="mode-pill">${paymentModeLabel(f.payment_mode)}</span></td><td>${f.transaction_id || '—'}</td>
         <td>${f.remarks || '—'}</td>
-        <td><button class="btn btn-small btn-danger delete-funding" data-id="${f.id}">Delete</button></td>
+        <td>${state.canWrite ? `<button class="btn btn-small btn-danger delete-funding" data-id="${f.id}">Delete</button>` : ''}</td>
       </tr>`
     )
     .join('');
