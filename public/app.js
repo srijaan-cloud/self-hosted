@@ -106,9 +106,9 @@ async function loadPublicShowcase() {
   kpiRow.innerHTML = `
     <div class="showcase-hero">
       <div class="eyebrow" style="text-align:center;">Construction &amp; Development</div>
-      <h1 class="hero-headline">Building <em>Timeless</em> Spaces, Together</h1>
-      <p class="auth-sub" style="font-size:0.95rem; max-width:520px; margin-left:auto; margin-right:auto;">
-        Explore Tapasya Constructions' ongoing and completed developments.
+      <h1 class="hero-headline">Master Builders for <em>End-to-End</em> Construction Solutions</h1>
+      <p class="auth-sub" style="font-size:0.98rem; max-width:620px; margin-left:auto; margin-right:auto;">
+        From site survey and municipal approvals to structural execution and turnkey interior fit-outs — we manage your entire project under one roof.
       </p>
     </div>
   `;
