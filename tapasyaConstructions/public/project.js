@@ -170,6 +170,10 @@ function setupEditProjectModal() {
     document.getElementById('ep-status').value = p.status;
     document.getElementById('ep-budget').value = p.total_budget;
     document.getElementById('ep-description').value = p.description || '';
+    document.getElementById('ep-price-sqft').value = p.price_per_sqft || '';
+    document.getElementById('ep-total-area').value = p.total_area_sqft || '';
+    document.getElementById('ep-sold-price').value = p.sold_price_total || '';
+    document.getElementById('ep-amenities').value = p.amenities || '';
     openModal('edit-project-modal');
   });
   document.getElementById('ep-save').addEventListener('click', async () => {
@@ -183,10 +187,16 @@ function setupEditProjectModal() {
       status: document.getElementById('ep-status').value,
       total_budget: parseFloat(document.getElementById('ep-budget').value) || 0,
       description: document.getElementById('ep-description').value.trim(),
+      price_per_sqft: parseFloat(document.getElementById('ep-price-sqft').value) || null,
+      total_area_sqft: parseFloat(document.getElementById('ep-total-area').value) || null,
+      sold_price_total: parseFloat(document.getElementById('ep-sold-price').value) || null,
+      amenities: document.getElementById('ep-amenities').value.trim(),
     };
     await api(`/api/projects/${state.projectId}`, { method: 'PATCH', body: JSON.stringify(body) });
     closeModal('edit-project-modal');
     await loadProject();
+    renderDescriptionAndTimeline(state.project);
+    if (document.getElementById('showcase-price-view')) renderPriceSummary(state.project);
   });
 }
 

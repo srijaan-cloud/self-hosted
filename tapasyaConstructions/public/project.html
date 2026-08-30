@@ -242,6 +242,14 @@
       </div>
       <label class="field-label">Description</label>
       <textarea id="ep-description"></textarea>
+      <h3 style="margin:16px 0 8px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft);">Public Page Pricing</h3>
+      <div class="form-grid">
+        <div><label class="field-label">Price per sq.ft (₹)</label><input id="ep-price-sqft" type="number" step="0.01" /></div>
+        <div><label class="field-label">Total Area (sq.ft)</label><input id="ep-total-area" type="number" step="0.01" /></div>
+        <div><label class="field-label">Sold Price — total (₹, completed projects)</label><input id="ep-sold-price" type="number" step="0.01" /></div>
+      </div>
+      <label class="field-label">Amenities (comma-separated)</label>
+      <input id="ep-amenities" type="text" placeholder="Clubhouse, Gym, Kids' Play Area, 24x7 Security" />
       <div class="modal-actions">
         <button class="btn btn-secondary modal-close" data-modal="edit-project-modal">Cancel</button>
         <button id="ep-save" class="btn btn-primary">Save</button>
