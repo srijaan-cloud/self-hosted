@@ -84,19 +84,12 @@ async function loadPublicShowcase() {
   grid.innerHTML = projects
     .map((p) => {
       const img = p.cover_image_key ? `background-image:url('/uploads/${p.cover_image_key}')` : '';
-      const priceLine =
-        p.status === 'completed' && p.sold_price_total
-          ? `Sold: ${formatCurrency(p.sold_price_total)}`
-          : p.price_per_sqft
-          ? `From ${formatCurrency(p.price_per_sqft)}/sq.ft`
-          : '';
       return `
         <a class="showcase-card" href="project.html?id=${p.id}">
           <div class="sc-image" style="${img}"></div>
           <div class="sc-body">
             <div class="sc-name">${p.name}</div>
             <div class="sc-meta">${p.city || ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span></div>
-            ${priceLine ? `<div class="sc-price">${priceLine}</div>` : ''}
           </div>
         </a>
       `;

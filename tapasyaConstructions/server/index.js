@@ -823,10 +823,12 @@ app.get('/api/dashboard', async (c) => {
 // completed ones. Deliberately open to every role (director/site_supervisor/
 // auditor can see it too, e.g. while managing it), not gated to viewer only.
 
+// No pricing/payment info at all — price_per_sqft and sold_price_total are
+// deliberately excluded so guests can't retrieve them even by calling this
+// endpoint directly, not just hidden in the UI.
 const PUBLIC_PROJECT_FIELDS = [
   'id', 'name', 'client_name', 'city', 'status', 'description', 'start_date',
-  'expected_end_date', 'actual_end_date', 'price_per_sqft', 'total_area_sqft',
-  'sold_price_total', 'amenities',
+  'expected_end_date', 'actual_end_date', 'total_area_sqft', 'amenities',
 ];
 
 function toPublicProject(row, coverImageKey) {
