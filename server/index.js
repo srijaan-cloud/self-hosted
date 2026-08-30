@@ -28,9 +28,20 @@ async function requireLogin(c, next) {
   return next();
 }
 
-async function requirePageLogin(c, next) {
-  if (c.get('session').loggedIn) return next();
-  return c.redirect('/login.html');
+// The site is browsable without signing in — an unauthenticated visitor
+// silently gets the same read-only guest session the old "Skip" button used
+// to create, instead of being redirected to a login wall. Login is now an
+// opt-in action (a "Login" link in the header), not a requirement to browse.
+async function ensurePageSession(c, next) {
+  const session = c.get('session');
+  if (!session.loggedIn) {
+    session.loggedIn = true;
+    session.userId = null;
+    session.name = 'Guest';
+    session.role = 'viewer';
+    session.all_projects_access = false;
+  }
+  return next();
 }
 
 async function requireDirector(c, next) {
@@ -72,9 +83,9 @@ function fetchAsset(c, path) {
   return c.env.ASSETS.fetch(new Request(url, c.req.raw));
 }
 
-app.get('/', requirePageLogin, (c) => fetchAsset(c, '/index.html'));
-app.get('/index.html', requirePageLogin, (c) => fetchAsset(c, '/index.html'));
-app.get('/project.html', requirePageLogin, (c) => fetchAsset(c, '/project.html'));
+app.get('/', ensurePageSession, (c) => fetchAsset(c, '/index.html'));
+app.get('/index.html', ensurePageSession, (c) => fetchAsset(c, '/index.html'));
+app.get('/project.html', ensurePageSession, (c) => fetchAsset(c, '/project.html'));
 
 app.get('/auth/google', oauth.googleAuthStart);
 app.get('/auth/google/callback', oauth.googleAuthCallback);
@@ -84,7 +95,6 @@ const PUBLIC_API_PATHS = new Set([
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/bootstrap',
-  '/api/auth/guest',
   '/api/auth/pending-verification',
   '/api/auth/pending-verification/resend',
   '/api/auth/verify-first-login',
@@ -148,19 +158,6 @@ app.post('/api/auth/bootstrap', async (c) => {
   session.name = name;
   session.role = 'director';
   session.all_projects_access = true;
-  return c.json({ ok: true });
-});
-
-// Skip sign-in entirely and view read-only, no account needed. An anonymous
-// viewer session — no userId, so requireLogin's role-refresh step just leaves it
-// alone; there's no account to later promote since nothing identifies who this is.
-app.post('/api/auth/guest', async (c) => {
-  const session = c.get('session');
-  session.loggedIn = true;
-  session.userId = null;
-  session.name = 'Guest';
-  session.role = 'viewer';
-  session.all_projects_access = false;
   return c.json({ ok: true });
 });
 

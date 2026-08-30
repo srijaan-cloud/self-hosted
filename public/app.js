@@ -1,18 +1,29 @@
-const state = { me: null, dashboard: null, allProjects: [] };
+const state = { me: null, dashboard: null, allProjects: [], guestPreview: false };
 
 async function boot() {
   state.me = await setupHeader();
-  if (state.me.role === 'director') {
+  state.guestPreview = new URLSearchParams(location.search).get('guestpreview') === '1';
+  const isStaff = isInternalRole(state.me.role);
+  const showInternal = isStaff && !state.guestPreview;
+
+  if (isStaff && state.guestPreview) {
+    document.getElementById('exit-preview-banner').classList.remove('hidden');
+  } else if (isStaff) {
+    document.getElementById('guest-preview-btn').classList.remove('hidden');
+  }
+
+  if (showInternal && state.me.role === 'director') {
     document.getElementById('nav-settings').classList.remove('hidden');
     document.getElementById('new-project-btn').classList.remove('hidden');
   }
-  if (!canWriteRole(state.me.role)) {
+  if (!showInternal || !canWriteRole(state.me.role)) {
     document.getElementById('new-vendor-btn').classList.add('hidden');
     document.getElementById('new-material-type-btn').classList.add('hidden');
   }
-  // Viewers/guests get the public showcase only — Vendors/Reports are internal
-  // financial pages, and "New Project" is a director action either way.
-  if (!isInternalRole(state.me.role)) {
+  // Viewers/guests (and staff previewing as a guest) get the public showcase
+  // only — Vendors/Reports are internal financial pages, and "New Project" is
+  // a director action either way.
+  if (!showInternal) {
     document.getElementById('nav-vendors').classList.add('hidden');
     document.getElementById('nav-reports').classList.add('hidden');
     document.getElementById('new-project-btn').classList.add('hidden');
@@ -49,7 +60,7 @@ function setupNav() {
 // ==================== DASHBOARD ====================
 
 async function loadDashboard() {
-  if (!isInternalRole(state.me.role)) {
+  if (!isInternalRole(state.me.role) || state.guestPreview) {
     await loadPublicShowcase();
     return;
   }
@@ -84,8 +95,9 @@ async function loadPublicShowcase() {
   grid.innerHTML = projects
     .map((p) => {
       const img = p.cover_image_key ? `background-image:url('/uploads/${p.cover_image_key}')` : '';
+      const href = `project.html?id=${p.id}${state.guestPreview ? '&guestpreview=1' : ''}`;
       return `
-        <a class="showcase-card" href="project.html?id=${p.id}">
+        <a class="showcase-card" href="${href}">
           <div class="sc-image" style="${img}"></div>
           <div class="sc-body">
             <div class="sc-name">${p.name}</div>

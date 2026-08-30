@@ -24,14 +24,6 @@ async function boot() {
   document.getElementById('login-form').classList.toggle('hidden', !status.hasAnyStaffUser);
 }
 
-document.getElementById('skip-btn').addEventListener('click', async () => {
-  try {
-    await api('/api/auth/guest', { method: 'POST' });
-    window.location.href = '/';
-  } catch (e) {
-    showError(e.message);
-  }
-});
 
 document.getElementById('verify-submit').addEventListener('click', async () => {
   const code = document.getElementById('verify-code').value.trim();

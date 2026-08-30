@@ -166,6 +166,11 @@ label.field-label { display: block; font-size: 0.78rem; color: var(--ink-soft); 
   flex-wrap: wrap;
 }
 .app-header .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; letter-spacing: 0.02em; }
+.preview-banner {
+  background: var(--amber-soft); color: var(--amber); text-align: center;
+  padding: 10px 16px; font-size: 0.85rem; font-weight: 600;
+}
+.preview-banner a { color: var(--amber); text-decoration: underline; margin-left: 8px; }
 .site-logo { height: 30px; width: auto; display: block; }
 .app-nav { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
 .app-nav a {
