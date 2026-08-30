@@ -13,13 +13,19 @@ async function boot() {
     return;
   }
   state.me = await setupHeader();
+  state.guestPreview = new URLSearchParams(window.location.search).get('guestpreview') === '1';
   setupTabs();
   setupShowcaseTab();
   setupReviewModal();
 
-  if (!isInternalRole(state.me.role)) {
-    // Viewer/guest: only the public showcase — internal tabs never even render,
-    // and internal endpoints (materials/payments/dashboard/etc.) would 403 anyway.
+  if (isInternalRole(state.me.role) && state.guestPreview) {
+    document.getElementById('exit-preview-banner').classList.remove('hidden');
+  }
+
+  if (!isInternalRole(state.me.role) || state.guestPreview) {
+    // Viewer/guest (or staff previewing as a guest): only the public showcase
+    // — internal tabs never even render, and internal endpoints
+    // (materials/payments/dashboard/etc.) would 403 anyway for a real guest.
     state.canWrite = false;
     document.querySelectorAll('.internal-tab').forEach((el) => el.classList.add('hidden'));
     document.getElementById('showcase-tab-btn').classList.add('active');

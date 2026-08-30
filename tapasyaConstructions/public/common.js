@@ -130,14 +130,22 @@ document.addEventListener('click', (e) => {
   if (e.target.matches('.modal-close')) closeModal(e.target.dataset.modal);
 });
 
-// Shared header wiring (role badge + logout). Each page decides its own
+// Shared header wiring (role badge + login/logout). Each page decides its own
 // director-only element visibility using the returned user.
+//
+// A visitor who never signed in (no Google/username account) has userId ===
+// null even while browsing as a "Guest" viewer — there's no real account to
+// log out of, so they see "Login" instead of "Log off" in the same spot.
 async function setupHeader() {
   const me = await api('/api/auth/me');
+  const isRealAccount = me.userId != null;
   const badge = document.getElementById('role-badge');
-  if (badge) badge.textContent = `${me.name} · ${roleLabel(me.role)}`;
+  if (badge) badge.textContent = isRealAccount ? `${me.name} · ${roleLabel(me.role)}` : '';
+  const loginBtn = document.getElementById('login-btn');
+  if (loginBtn) loginBtn.classList.toggle('hidden', isRealAccount);
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
+    logoutBtn.classList.toggle('hidden', !isRealAccount);
     logoutBtn.addEventListener('click', () => {
       window.location.href = '/api/auth/logout';
     });

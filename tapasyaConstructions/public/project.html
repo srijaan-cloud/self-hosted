@@ -16,9 +16,15 @@
     <nav class="app-nav"><a href="/">← All Projects</a></nav>
     <div class="header-actions">
       <span id="role-badge" class="role-badge"></span>
-      <button id="logout-btn" class="icon-btn" title="Log out">🚪</button>
+      <a id="login-btn" class="btn btn-primary btn-small hidden" href="/login.html">Login</a>
+      <button id="logout-btn" class="btn btn-secondary btn-small hidden">Log off</button>
     </div>
   </header>
+
+  <div id="exit-preview-banner" class="preview-banner hidden">
+    Viewing as a guest would see it — nothing here is editable.
+    <a href="/">Exit preview &amp; back to admin</a>
+  </div>
 
   <div class="container">
     <div class="section-header">
