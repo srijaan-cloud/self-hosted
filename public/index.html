@@ -20,10 +20,10 @@
       <a href="#" data-view="settings" id="nav-settings" class="hidden">Settings</a>
     </nav>
     <nav class="app-nav hidden" id="guest-nav">
-      <a href="#home-section">Home</a>
-      <a href="#service-section">Service</a>
-      <a href="#portfolio-section">Portfolio</a>
-      <a href="#contact-section">Contact</a>
+      <a href="#" data-view="home-section" class="active">Home</a>
+      <a href="#" data-view="service-section">Service</a>
+      <a href="#" data-view="portfolio-section">Portfolio</a>
+      <a href="#" data-view="contact-section">Contact</a>
     </nav>
     <div class="header-actions">
       <a id="guest-preview-btn" class="btn btn-secondary btn-small hidden" href="/?guestpreview=1">View as Guest</a>
@@ -42,11 +42,11 @@
 
     <!-- ===== DASHBOARD VIEW ===== -->
     <section id="view-dashboard" class="view">
-      <div id="home-section">
+      <div id="home-section" class="guest-subview">
         <div class="kpi-row" id="kpi-row"></div>
       </div>
 
-      <div id="service-section" class="hidden">
+      <div id="service-section" class="guest-subview hidden">
         <div class="section-header"><h2>Our Services</h2></div>
         <div class="service-categories">
 
@@ -119,7 +119,7 @@
         </div>
       </div>
 
-      <div id="portfolio-section">
+      <div id="portfolio-section" class="guest-subview hidden">
         <div class="section-header">
           <h2 id="projects-heading">Projects</h2>
           <button id="new-project-btn" class="btn btn-primary btn-inline hidden">+ New Project</button>
@@ -127,7 +127,7 @@
         <div class="project-grid" id="project-grid"></div>
       </div>
 
-      <div id="contact-section" class="hidden">
+      <div id="contact-section" class="guest-subview hidden">
         <div class="section-header"><h2>Contact Us</h2></div>
         <div class="section-card contact-card">
           <div><span class="contact-label">Phone</span><a href="tel:+919440778115">+91 94407 78115</a></div>

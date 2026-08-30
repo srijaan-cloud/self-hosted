@@ -29,8 +29,14 @@ async function boot() {
     document.getElementById('new-project-btn').classList.add('hidden');
     document.getElementById('staff-nav').classList.add('hidden');
     document.getElementById('guest-nav').classList.remove('hidden');
+  } else {
+    // Staff's Dashboard shows the KPI row and project grid together, not as
+    // separate tabs — only guests get the Home/Service/Portfolio/Contact
+    // tab-switching behavior.
+    document.getElementById('portfolio-section').classList.remove('hidden');
   }
   setupNav();
+  setupGuestNav();
   setupProjectModal();
   setupVendorModal();
   setupStaffModal();
@@ -45,10 +51,10 @@ async function boot() {
 // ==================== NAV ====================
 
 function setupNav() {
-  document.querySelectorAll('.app-nav a').forEach((link) => {
+  document.querySelectorAll('#staff-nav a').forEach((link) => {
     link.addEventListener('click', async (e) => {
       e.preventDefault();
-      document.querySelectorAll('.app-nav a').forEach((l) => l.classList.remove('active'));
+      document.querySelectorAll('#staff-nav a').forEach((l) => l.classList.remove('active'));
       link.classList.add('active');
       const view = link.dataset.view;
       document.querySelectorAll('.view').forEach((v) => v.classList.add('hidden'));
@@ -56,6 +62,22 @@ function setupNav() {
       if (view === 'vendors') await loadVendors();
       if (view === 'reports') await loadReports();
       if (view === 'settings') await loadSettings();
+    });
+  });
+}
+
+// Guest-facing Home/Service/Portfolio/Contact — click-to-show tabs, one
+// section visible at a time, same interaction model as the staff nav (not
+// anchor scrolling — everything else stays hidden until its own tab is
+// clicked, so the homepage isn't one long stacked page).
+function setupGuestNav() {
+  document.querySelectorAll('#guest-nav a').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('#guest-nav a').forEach((l) => l.classList.remove('active'));
+      link.classList.add('active');
+      document.querySelectorAll('.guest-subview').forEach((v) => v.classList.add('hidden'));
+      document.getElementById(link.dataset.view).classList.remove('hidden');
     });
   });
 }
@@ -76,8 +98,6 @@ async function loadDashboard() {
 // No cost/payment data — just the project portfolio, marketing-style.
 
 async function loadPublicShowcase() {
-  document.getElementById('service-section').classList.remove('hidden');
-  document.getElementById('contact-section').classList.remove('hidden');
   document.getElementById('projects-heading').textContent = 'Our Portfolio';
 
   const projects = await api('/api/public/projects');
