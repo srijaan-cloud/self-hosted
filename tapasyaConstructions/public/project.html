@@ -12,7 +12,15 @@
 <body>
   <div class="bg-layer"></div>
   <header class="app-header">
-    <div class="brand"><a href="/" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:10px;"><img id="site-logo" class="site-logo hidden" src="/api/settings/logo-image" alt="" onload="this.classList.remove('hidden')" onerror="this.remove()" /> Tapasya Constructions</a></div>
+    <div class="brand">
+      <a href="/" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:10px;">
+        <img id="site-logo" class="site-logo hidden" src="/api/settings/logo-image" alt="" onload="this.classList.remove('hidden')" onerror="this.remove()" />
+        <div class="brand-text">
+          <div class="brand-name">Tapasya Constructions</div>
+          <div class="brand-tagline" id="brand-tagline">Complete Construction Management From Concept to Completion</div>
+        </div>
+      </a>
+    </div>
     <nav class="app-nav"><a href="/">← All Projects</a></nav>
     <div class="header-actions">
       <span id="role-badge" class="role-badge"></span>

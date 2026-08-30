@@ -120,6 +120,53 @@ function autoCalcBudget(prefix) {
   if (price && area) document.getElementById(`${prefix}-budget`).value = (price * area + extra).toFixed(2);
 }
 
+function escapeHtmlClient(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+// Site-content text formats — see server/index.js DEFAULT_SITE_CONTENT for
+// examples. Kept as plain delimited text (not raw JSON) so a director can
+// edit it in a single textarea in Settings without a complex nested UI.
+
+// "## Category\nline\nline\n\n## Category2\n..." -> [{ title, items: [...] }]
+function parseCategoryBlocks(text) {
+  return (text || '')
+    .split(/\n(?=##\s)/)
+    .map((b) => b.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+      return { title: lines[0].replace(/^##\s*/, ''), items: lines.slice(1) };
+    });
+}
+
+// "Name :: Description" line -> { name, description }
+function parseNameDescLine(line) {
+  const idx = line.indexOf('::');
+  return idx === -1 ? { name: line.trim(), description: '' } : { name: line.slice(0, idx).trim(), description: line.slice(idx + 2).trim() };
+}
+
+// Category blocks whose item lines are "Name :: Description"
+function parseCategoryBlocksWithDesc(text) {
+  return parseCategoryBlocks(text).map((cat) => ({ title: cat.title, items: cat.items.map(parseNameDescLine) }));
+}
+
+// Plain "Name :: Description" lines (no ## headers) -> [{ name, description }]
+function parseNameDescLines(text) {
+  return (text || '').split('\n').map((l) => l.trim()).filter(Boolean).map(parseNameDescLine);
+}
+
+async function loadBrandTagline() {
+  const el = document.getElementById('brand-tagline');
+  if (!el) return;
+  try {
+    const content = await api('/api/site-content');
+    el.textContent = content.site_tagline;
+  } catch (e) {
+    // Leave the static fallback text already in the HTML.
+  }
+}
+
 function openModal(id) {
   document.getElementById(id).classList.remove('hidden');
 }
@@ -137,6 +184,7 @@ document.addEventListener('click', (e) => {
 // null even while browsing as a "Guest" viewer — there's no real account to
 // log out of, so they see "Login" instead of "Log off" in the same spot.
 async function setupHeader() {
+  loadBrandTagline();
   const me = await api('/api/auth/me');
   const isRealAccount = me.userId != null;
   const badge = document.getElementById('role-badge');

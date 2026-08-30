@@ -129,6 +129,11 @@ input, select, textarea {
 }
 textarea { resize: vertical; min-height: 60px; }
 label.field-label { display: block; font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 4px; font-weight: 600; }
+label.field-label code { background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 4px; font-size: 0.78rem; }
+.sc-subheading { font-family: var(--font-serif); font-size: 0.95rem; margin: 22px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink); }
+.sc-subheading:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+.sc-textarea { min-height: 110px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; }
+.sc-textarea-tall { min-height: 260px; }
 
 .btn {
   display: block;
@@ -168,7 +173,10 @@ label.field-label { display: block; font-size: 0.78rem; color: var(--ink-soft); 
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
-.app-header .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; letter-spacing: 0.02em; }
+.app-header .brand { display: flex; align-items: center; gap: 10px; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.25; }
+.brand-name { font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; letter-spacing: 0.02em; }
+.brand-tagline { font-size: 0.66rem; font-style: italic; color: var(--ink-soft); font-weight: 400; }
 .preview-banner {
   background: var(--amber-soft); color: var(--amber); text-align: center;
   padding: 10px 16px; font-size: 0.85rem; font-weight: 600;
