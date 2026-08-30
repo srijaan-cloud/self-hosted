@@ -20,26 +20,10 @@
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1c1a16;
-    --card: #26241e;
-    --ink: #f1efe7;
-    --ink-soft: #a9a496;
-    --line: #3a372e;
-    --accent: #c99a5a;
-    --accent-soft: #3a2c1c;
-    --accent2: #5fa0b3;
-    --accent2-soft: #1f3338;
-    --amber: #e0ab5c;
-    --amber-soft: #332a1a;
-    --red: #e0806c;
-    --red-soft: #3a241f;
-    --green: #7cc28f;
-    --green-soft: #1f3324;
-    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25);
-  }
-}
+/* Deliberately no @media (prefers-color-scheme: dark) override — the brand is a
+   warm, light, editorial look (like the vishkre.com reference), and it should
+   look that way for every visitor regardless of their device's dark-mode
+   setting, not flip to a dark theme automatically. */
 
 * { box-sizing: border-box; }
 
@@ -64,9 +48,6 @@ body {
   background-repeat: no-repeat;
   opacity: 0.07;
   pointer-events: none;
-}
-@media (prefers-color-scheme: dark) {
-  .bg-layer { opacity: 0.14; }
 }
 
 .hidden { display: none !important; }
