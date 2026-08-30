@@ -12,7 +12,13 @@
 <body>
   <div class="bg-layer"></div>
   <header class="app-header">
-    <div class="brand"><img id="site-logo" class="site-logo hidden" src="/api/settings/logo-image" alt="" onload="this.classList.remove('hidden')" onerror="this.remove()" /> Tapasya Constructions</div>
+    <div class="brand">
+      <img id="site-logo" class="site-logo hidden" src="/api/settings/logo-image" alt="" onload="this.classList.remove('hidden')" onerror="this.remove()" />
+      <div class="brand-text">
+        <div class="brand-name">Tapasya Constructions</div>
+        <div class="brand-tagline" id="brand-tagline">Complete Construction Management From Concept to Completion</div>
+      </div>
+    </div>
     <nav class="app-nav" id="staff-nav">
       <a href="#" data-view="dashboard" class="active">Dashboard</a>
       <a href="#" data-view="vendors" id="nav-vendors">Vendors</a>
@@ -48,154 +54,24 @@
         <div class="home-block">
           <div class="section-header-center">
             <h2>Our Complete Service Lifecycle</h2>
-            <p class="auth-sub">Integrated solutions tailored for residential, commercial, and industrial developers.</p>
+            <p class="auth-sub" id="lifecycle-subtitle"></p>
           </div>
-          <div class="lifecycle-grid">
-            <div class="lifecycle-card">
-              <h3>1. Pre-Construction &amp; Legal</h3>
-              <ul>
-                <li>Site &amp; Topographical Survey</li>
-                <li>Civil Architecture &amp; Structural Design</li>
-                <li>Municipal Building Plan Approvals</li>
-                <li>RERA Registration &amp; Filings</li>
-              </ul>
-            </div>
-            <div class="lifecycle-card">
-              <h3>2. Core Construction (EPC)</h3>
-              <ul>
-                <li>Turnkey Contracting</li>
-                <li>Foundation &amp; RCC Frame Erection</li>
-                <li>Project Management Consultancy (PMC)</li>
-                <li>Excavation &amp; Structural Demolition</li>
-              </ul>
-            </div>
-            <div class="lifecycle-card">
-              <h3>3. Procurement &amp; Logistics</h3>
-              <ul>
-                <li>Raw Material Supply (Steel/Cement/RMC)</li>
-                <li>Direct Manufacturer Sourcing</li>
-                <li>Heavy Machinery &amp; Equipment Rental</li>
-                <li>Quality Control &amp; Testing</li>
-              </ul>
-            </div>
-            <div class="lifecycle-card">
-              <h3>4. Finishing &amp; Handover</h3>
-              <ul>
-                <li>Interior Fit-outs &amp; Millwork</li>
-                <li>Exterior Facade &amp; Waterproofing</li>
-                <li>Landscaping &amp; Drainage Works</li>
-                <li>Structural Audits &amp; Repairs</li>
-              </ul>
-            </div>
-          </div>
+          <div class="lifecycle-grid" id="lifecycle-grid"></div>
         </div>
 
         <div class="home-block">
           <div class="section-header-center">
             <h2>How We Execute</h2>
-            <p class="auth-sub">A structured 4-step framework to deliver your project hassle-free.</p>
+            <p class="auth-sub" id="execute-subtitle"></p>
           </div>
-          <div class="execute-grid">
-            <div class="execute-card">
-              <div class="execute-number">01</div>
-              <h3>Survey &amp; Planning</h3>
-              <p>We analyze the site, run soil tests, and finalize initial architectural drafts with your inputs.</p>
-            </div>
-            <div class="execute-card">
-              <div class="execute-number">02</div>
-              <h3>Approvals &amp; Budgeting</h3>
-              <p>Securing municipal permits, structural sign-offs, and locking in a transparent BOQ cost estimation.</p>
-            </div>
-            <div class="execute-card">
-              <div class="execute-number">03</div>
-              <h3>Civil Execution</h3>
-              <p>On-site construction led by experienced PMC leads using high-grade materials and strict safety protocols.</p>
-            </div>
-            <div class="execute-card">
-              <div class="execute-number">04</div>
-              <h3>Finishing &amp; Handover</h3>
-              <p>Completing interior fit-outs, obtaining Occupancy Certificates (OC), and handing over key access.</p>
-            </div>
-          </div>
-          <div class="stats-row">
-            <div class="stat"><div class="stat-number">15+</div><div class="stat-label">Years Industry Track Record</div></div>
-            <div class="stat"><div class="stat-number">250+</div><div class="stat-label">Projects Delivered</div></div>
-            <div class="stat"><div class="stat-number">100%</div><div class="stat-label">Regulatory Compliance Rate</div></div>
-          </div>
+          <div class="execute-grid" id="execute-grid"></div>
+          <div class="stats-row" id="stats-row"></div>
         </div>
       </div>
 
       <div id="service-section" class="guest-subview hidden">
         <div class="section-header"><h2>Our Services</h2></div>
-        <div class="service-categories">
-
-          <div class="section-card service-category">
-            <h3>1. Pre-Construction &amp; Planning Services</h3>
-            <dl>
-              <dt>Site Survey &amp; Land Mapping</dt>
-              <dd>Topographical survey, contour mapping, boundary demarcation, and soil testing/geotechnical analysis.</dd>
-              <dt>Master Planning &amp; Layout Design</dt>
-              <dd>Site layout, floor plan optimization, Vastu compliance design, and 3D elevations.</dd>
-              <dt>Architectural &amp; Structural Engineering</dt>
-              <dd>Civil architecture design, structural load calculations, MEP (Mechanical, Electrical, Plumbing) design, and HVAC planning.</dd>
-              <dt>Feasibility &amp; Estimations</dt>
-              <dd>Cost estimation, bill of quantities (BOQ), project viability studies, and financial budgeting.</dd>
-            </dl>
-          </div>
-
-          <div class="section-card service-category">
-            <h3>2. Regulatory, Legal &amp; Approval Services</h3>
-            <dl>
-              <dt>Municipal Approvals</dt>
-              <dd>Sanction plans, zoning compliance, building permits, and environmental clearances.</dd>
-              <dt>RERA Registration &amp; Compliance</dt>
-              <dd>Drafting required disclosures, RERA project registration, agent registrations, and quarterly filing support.</dd>
-              <dt>Occupancy &amp; Statutory Certifications</dt>
-              <dd>Fire NOC, water/sewerage connections, structural stability certificates, and Occupancy Certificate (OC) / Completion Certificate (CC).</dd>
-            </dl>
-          </div>
-
-          <div class="section-card service-category">
-            <h3>3. Execution &amp; Contracting Services (Core Construction)</h3>
-            <dl>
-              <dt>Turnkey Contracting / EPC (Engineering, Procurement, Construction)</dt>
-              <dd>Complete end-to-end execution from design to key handover.</dd>
-              <dt>Civil Construction &amp; General Contracting</dt>
-              <dd>Foundation work, RCC framing, brickwork, plastering, and structural erection.</dd>
-              <dt>Project Management Consultancy (PMC)</dt>
-              <dd>On-site supervision, quality control, timeline auditing, and site safety management.</dd>
-              <dt>Demolition &amp; Site Preparation</dt>
-              <dd>Land clearing, excavation, earthworks, and structural demolition of old buildings.</dd>
-            </dl>
-          </div>
-
-          <div class="section-card service-category">
-            <h3>4. Material, Procurement &amp; Heavy Equipment</h3>
-            <dl>
-              <dt>Raw Material Supply &amp; Procurement</dt>
-              <dd>Bulk sourcing of cement, steel (TMT), aggregates, bricks, sand, and ready-mix concrete (RMC).</dd>
-              <dt>Equipment Leasing &amp; Rental</dt>
-              <dd>Renting heavy machinery such as excavators, cranes, concrete pumps, scaffolding, and shuttering material.</dd>
-            </dl>
-          </div>
-
-          <div class="section-card service-category">
-            <h3>5. Post-Structure, Finishing &amp; Specialized Services</h3>
-            <dl>
-              <dt>Interior Design &amp; Fit-outs</dt>
-              <dd>False ceiling, modular kitchens, cabinetry, wall finishes, flooring, and loose furniture execution.</dd>
-              <dt>Facade &amp; Waterproofing</dt>
-              <dd>Glass curtain walls, exterior cladding, basement/roof waterproofing, and thermal insulation.</dd>
-              <dt>Landscaping &amp; External Development</dt>
-              <dd>Compound walls, paving, drainage networks, internal roads, and green spaces.</dd>
-              <dt>Renovation, Retrofitting &amp; Structural Repairs</dt>
-              <dd>Foundation strengthening, jacketed repairs, building expansion, and remodeling.</dd>
-              <dt>Facility Management &amp; Maintenance</dt>
-              <dd>Post-handover maintenance contracts (AMC), structural audit inspections, and repair services.</dd>
-            </dl>
-          </div>
-
-        </div>
+        <div class="service-categories" id="service-categories"></div>
       </div>
 
       <div id="portfolio-section" class="guest-subview hidden">
@@ -208,15 +84,7 @@
 
       <div id="contact-section" class="guest-subview hidden">
         <div class="section-header"><h2>Contact Us</h2></div>
-        <div class="section-card contact-card">
-          <div><span class="contact-label">Phone</span><a href="tel:+919440778115">+91 94407 78115</a></div>
-          <div><span class="contact-label">Email</span><a href="mailto:tapasyaconstructions@gmail.com">tapasyaconstructions@gmail.com</a></div>
-          <div>
-            <span class="contact-label">Office</span>
-            <span>Flat #301, Gayatri Constructions, Jyothi Nagar, Karimnagar</span>
-            <a href="https://maps.app.goo.gl/dTfF1nLYCcMWpbvJ9?g_st=iw" target="_blank" rel="noopener" class="contact-map-link">View on Google Maps →</a>
-          </div>
-        </div>
+        <div class="section-card contact-card" id="contact-info-card"></div>
 
         <div class="section-card">
           <h2 style="margin-bottom:16px;">Send Us a Message</h2>
@@ -279,6 +147,59 @@
         <p class="auth-sub" style="margin:0 0 10px;">Shown very faintly behind every page. Applies site-wide immediately.</p>
         <input id="bg-file-input" type="file" accept="image/*" />
         <p id="bg-upload-status" class="auth-sub hidden"></p>
+      </div>
+
+      <div class="section-card">
+        <h2>Website Content</h2>
+        <p class="auth-sub" style="margin:0 0 16px;">
+          Everything a guest sees on the public homepage — edit any of this and it updates the live site immediately, no code change needed.
+        </p>
+
+        <h3 class="sc-subheading">Header Tagline</h3>
+        <label class="field-label">Tagline (shown under the site name in the header, every page)</label>
+        <input id="sc-tagline" type="text" />
+
+        <h3 class="sc-subheading">Home — Hero</h3>
+        <label class="field-label">Eyebrow (small label above the headline)</label>
+        <input id="sc-hero-eyebrow" type="text" />
+        <label class="field-label">Headline</label>
+        <input id="sc-hero-headline" type="text" />
+        <label class="field-label">Description</label>
+        <textarea id="sc-hero-description"></textarea>
+
+        <h3 class="sc-subheading">Home — Service Lifecycle</h3>
+        <label class="field-label">Subtitle</label>
+        <input id="sc-lifecycle-subtitle" type="text" />
+        <label class="field-label">
+          Categories — one <code>## Category Title</code> line per group, followed by one plain bullet per line. Blank line between groups.
+        </label>
+        <textarea id="sc-lifecycle-content" class="sc-textarea"></textarea>
+
+        <h3 class="sc-subheading">Home — How We Execute</h3>
+        <label class="field-label">Subtitle</label>
+        <input id="sc-execute-subtitle" type="text" />
+        <label class="field-label">Steps — one per line, as <code>Title :: Description</code></label>
+        <textarea id="sc-execute-steps" class="sc-textarea"></textarea>
+        <label class="field-label">Stats — one per line, as <code>Number :: Label</code></label>
+        <textarea id="sc-execute-stats" class="sc-textarea"></textarea>
+
+        <h3 class="sc-subheading">Service Page</h3>
+        <label class="field-label">
+          Categories — one <code>## Category Title</code> line per group, followed by one <code>Name :: Description</code> per line. Blank line between groups.
+        </label>
+        <textarea id="sc-services-content" class="sc-textarea sc-textarea-tall"></textarea>
+
+        <h3 class="sc-subheading">Contact Page</h3>
+        <div class="form-grid">
+          <div><label class="field-label">Phone</label><input id="sc-contact-phone" type="text" /></div>
+          <div><label class="field-label">Email</label><input id="sc-contact-email" type="text" /></div>
+          <div class="full"><label class="field-label">Office Address</label><input id="sc-contact-address" type="text" /></div>
+          <div class="full"><label class="field-label">Google Maps Link</label><input id="sc-contact-map-link" type="text" /></div>
+        </div>
+
+        <p id="site-content-error" class="auth-error hidden"></p>
+        <p id="site-content-success" class="auth-success hidden"></p>
+        <button id="site-content-save" class="btn btn-primary" style="margin-top:8px;">Save Website Content</button>
       </div>
 
       <div class="section-card">

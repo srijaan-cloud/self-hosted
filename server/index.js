@@ -101,6 +101,7 @@ const PUBLIC_API_PATHS = new Set([
   '/api/settings/background-image',
   '/api/settings/logo-image',
   '/api/contact',
+  '/api/site-content',
 ]);
 
 app.use('/api/*', async (c, next) => {
@@ -273,6 +274,106 @@ app.post('/api/settings/logo', requireDirector, async (c) => {
   if (!file || typeof file === 'string') return c.json({ error: 'file is required' }, 400);
   await auth.setSiteLogo(c.env, await file.arrayBuffer(), file.type || 'image/png');
   return c.json({ ok: true });
+});
+
+// ---------- Site content (editable marketing copy) ----------
+// Everything a guest sees on the public homepage — hero, services,
+// lifecycle, execution steps/stats, contact details — lives here as one
+// editable JSON blob, not hardcoded, so a director can rewrite it from
+// Settings without a code change. "Category" fields use a lightweight
+// text format ("## Category" headers, plain or "Name :: Description"
+// lines) so the whole thing can be edited in a handful of textareas
+// instead of a complex nested add/remove-row UI.
+
+const DEFAULT_SITE_CONTENT = {
+  site_tagline: 'Complete Construction Management From Concept to Completion',
+  hero_eyebrow: 'Construction & Development',
+  hero_headline: 'Master Builders for End-to-End Construction Solutions',
+  hero_description:
+    "From site survey and municipal approvals to structural execution and turnkey interior fit-outs — we manage your entire project under one roof.",
+  services_content: `## 1. Pre-Construction & Planning Services
+Site Survey & Land Mapping :: Topographical survey, contour mapping, boundary demarcation, and soil testing/geotechnical analysis.
+Master Planning & Layout Design :: Site layout, floor plan optimization, Vastu compliance design, and 3D elevations.
+Architectural & Structural Engineering :: Civil architecture design, structural load calculations, MEP (Mechanical, Electrical, Plumbing) design, and HVAC planning.
+Feasibility & Estimations :: Cost estimation, bill of quantities (BOQ), project viability studies, and financial budgeting.
+
+## 2. Regulatory, Legal & Approval Services
+Municipal Approvals :: Sanction plans, zoning compliance, building permits, and environmental clearances.
+RERA Registration & Compliance :: Drafting required disclosures, RERA project registration, agent registrations, and quarterly filing support.
+Occupancy & Statutory Certifications :: Fire NOC, water/sewerage connections, structural stability certificates, and Occupancy Certificate (OC) / Completion Certificate (CC).
+
+## 3. Execution & Contracting Services (Core Construction)
+Turnkey Contracting / EPC (Engineering, Procurement, Construction) :: Complete end-to-end execution from design to key handover.
+Civil Construction & General Contracting :: Foundation work, RCC framing, brickwork, plastering, and structural erection.
+Project Management Consultancy (PMC) :: On-site supervision, quality control, timeline auditing, and site safety management.
+Demolition & Site Preparation :: Land clearing, excavation, earthworks, and structural demolition of old buildings.
+
+## 4. Material, Procurement & Heavy Equipment
+Raw Material Supply & Procurement :: Bulk sourcing of cement, steel (TMT), aggregates, bricks, sand, and ready-mix concrete (RMC).
+Equipment Leasing & Rental :: Renting heavy machinery such as excavators, cranes, concrete pumps, scaffolding, and shuttering material.
+
+## 5. Post-Structure, Finishing & Specialized Services
+Interior Design & Fit-outs :: False ceiling, modular kitchens, cabinetry, wall finishes, flooring, and loose furniture execution.
+Facade & Waterproofing :: Glass curtain walls, exterior cladding, basement/roof waterproofing, and thermal insulation.
+Landscaping & External Development :: Compound walls, paving, drainage networks, internal roads, and green spaces.
+Renovation, Retrofitting & Structural Repairs :: Foundation strengthening, jacketed repairs, building expansion, and remodeling.
+Facility Management & Maintenance :: Post-handover maintenance contracts (AMC), structural audit inspections, and repair services.`,
+  lifecycle_subtitle: 'Integrated solutions tailored for residential, commercial, and industrial developers.',
+  lifecycle_content: `## 1. Pre-Construction & Legal
+Site & Topographical Survey
+Civil Architecture & Structural Design
+Municipal Building Plan Approvals
+RERA Registration & Filings
+
+## 2. Core Construction (EPC)
+Turnkey Contracting
+Foundation & RCC Frame Erection
+Project Management Consultancy (PMC)
+Excavation & Structural Demolition
+
+## 3. Procurement & Logistics
+Raw Material Supply (Steel/Cement/RMC)
+Direct Manufacturer Sourcing
+Heavy Machinery & Equipment Rental
+Quality Control & Testing
+
+## 4. Finishing & Handover
+Interior Fit-outs & Millwork
+Exterior Facade & Waterproofing
+Landscaping & Drainage Works
+Structural Audits & Repairs`,
+  execute_subtitle: 'A structured 4-step framework to deliver your project hassle-free.',
+  execute_steps: `Survey & Planning :: We analyze the site, run soil tests, and finalize initial architectural drafts with your inputs.
+Approvals & Budgeting :: Securing municipal permits, structural sign-offs, and locking in a transparent BOQ cost estimation.
+Civil Execution :: On-site construction led by experienced PMC leads using high-grade materials and strict safety protocols.
+Finishing & Handover :: Completing interior fit-outs, obtaining Occupancy Certificates (OC), and handing over key access.`,
+  execute_stats: `15+ :: Years Industry Track Record
+250+ :: Projects Delivered
+100% :: Regulatory Compliance Rate`,
+  contact_phone: '+91 94407 78115',
+  contact_email: 'tapasyaconstructions@gmail.com',
+  contact_address: 'Flat #301, Gayatri Constructions, Jyothi Nagar, Karimnagar',
+  contact_map_link: 'https://maps.app.goo.gl/dTfF1nLYCcMWpbvJ9?g_st=iw',
+};
+
+async function getSiteContent(db) {
+  const row = await db.prepare('SELECT data FROM site_content WHERE id = 1').get();
+  const stored = row ? JSON.parse(row.data) : {};
+  return { ...DEFAULT_SITE_CONTENT, ...stored };
+}
+
+app.get('/api/site-content', async (c) => {
+  return c.json(await getSiteContent(getDb(c.env)));
+});
+
+app.put('/api/settings/site-content', requireDirector, async (c) => {
+  const body = await c.req.json();
+  const db = getDb(c.env);
+  const merged = { ...(await getSiteContent(db)), ...body };
+  await db
+    .prepare('INSERT INTO site_content (id, data, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP) ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP')
+    .run(JSON.stringify(merged));
+  return c.json(merged);
 });
 
 // ---------- Generic CRUD factory ----------

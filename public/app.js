@@ -44,6 +44,7 @@ async function boot() {
   setupBackgroundUpload();
   setupLogoUpload();
   setupContactForm();
+  setupSiteContentForm();
   document.getElementById('export-csv-btn').addEventListener('click', exportReportsCsv);
   await loadDashboard();
 }
@@ -100,41 +101,87 @@ async function loadDashboard() {
 async function loadPublicShowcase() {
   document.getElementById('projects-heading').textContent = 'Our Portfolio';
 
-  const projects = await api('/api/public/projects');
+  const [projects, content] = await Promise.all([api('/api/public/projects'), api('/api/site-content')]);
+  state.siteContent = content;
+
   const kpiRow = document.getElementById('kpi-row');
   kpiRow.style.display = 'block';
   kpiRow.innerHTML = `
     <div class="showcase-hero">
-      <div class="eyebrow" style="text-align:center;">Construction &amp; Development</div>
-      <h1 class="hero-headline">Master Builders for <em>End-to-End</em> Construction Solutions</h1>
-      <p class="hero-tagline">Complete Construction Management From Concept to Completion</p>
+      <div class="eyebrow" style="text-align:center;">${escapeHtmlClient(content.hero_eyebrow)}</div>
+      <h1 class="hero-headline">${escapeHtmlClient(content.hero_headline)}</h1>
       <p class="auth-sub" style="font-size:0.98rem; max-width:620px; margin-left:auto; margin-right:auto;">
-        From site survey and municipal approvals to structural execution and turnkey interior fit-outs — we manage your entire project under one roof.
+        ${escapeHtmlClient(content.hero_description)}
       </p>
+    </div>
+  `;
+
+  document.getElementById('lifecycle-subtitle').textContent = content.lifecycle_subtitle;
+  document.getElementById('lifecycle-grid').innerHTML = parseCategoryBlocks(content.lifecycle_content)
+    .map(
+      (cat) => `
+      <div class="lifecycle-card">
+        <h3>${escapeHtmlClient(cat.title)}</h3>
+        <ul>${cat.items.map((item) => `<li>${escapeHtmlClient(item)}</li>`).join('')}</ul>
+      </div>`
+    )
+    .join('');
+
+  document.getElementById('execute-subtitle').textContent = content.execute_subtitle;
+  document.getElementById('execute-grid').innerHTML = parseNameDescLines(content.execute_steps)
+    .map(
+      (step, i) => `
+      <div class="execute-card">
+        <div class="execute-number">${String(i + 1).padStart(2, '0')}</div>
+        <h3>${escapeHtmlClient(step.name)}</h3>
+        <p>${escapeHtmlClient(step.description)}</p>
+      </div>`
+    )
+    .join('');
+  document.getElementById('stats-row').innerHTML = parseNameDescLines(content.execute_stats)
+    .map((s) => `<div class="stat"><div class="stat-number">${escapeHtmlClient(s.name)}</div><div class="stat-label">${escapeHtmlClient(s.description)}</div></div>`)
+    .join('');
+
+  document.getElementById('service-categories').innerHTML = parseCategoryBlocksWithDesc(content.services_content)
+    .map(
+      (cat) => `
+      <div class="section-card service-category">
+        <h3>${escapeHtmlClient(cat.title)}</h3>
+        <dl>${cat.items.map((item) => `<dt>${escapeHtmlClient(item.name)}</dt><dd>${escapeHtmlClient(item.description)}</dd>`).join('')}</dl>
+      </div>`
+    )
+    .join('');
+
+  document.getElementById('contact-info-card').innerHTML = `
+    <div><span class="contact-label">Phone</span><a href="tel:${escapeHtmlClient(content.contact_phone.replace(/\s+/g, ''))}">${escapeHtmlClient(content.contact_phone)}</a></div>
+    <div><span class="contact-label">Email</span><a href="mailto:${escapeHtmlClient(content.contact_email)}">${escapeHtmlClient(content.contact_email)}</a></div>
+    <div>
+      <span class="contact-label">Office</span>
+      <span>${escapeHtmlClient(content.contact_address)}</span>
+      <a href="${escapeHtmlClient(content.contact_map_link)}" target="_blank" rel="noopener" class="contact-map-link">View on Google Maps →</a>
     </div>
   `;
 
   const grid = document.getElementById('project-grid');
   grid.className = 'showcase-grid';
-  if (projects.length === 0) {
-    grid.innerHTML = '<p class="empty-state">No projects published yet.</p>';
-    return;
-  }
-  grid.innerHTML = projects
-    .map((p) => {
-      const img = p.cover_image_key ? `background-image:url('/uploads/${p.cover_image_key}')` : '';
-      const href = `project.html?id=${p.id}${state.guestPreview ? '&guestpreview=1' : ''}`;
-      return `
-        <a class="showcase-card" href="${href}">
-          <div class="sc-image" style="${img}"></div>
-          <div class="sc-body">
-            <div class="sc-name">${p.name}</div>
-            <div class="sc-meta">${p.city || ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span></div>
-          </div>
-        </a>
-      `;
-    })
-    .join('');
+  grid.innerHTML =
+    projects.length === 0
+      ? '<p class="empty-state">No projects published yet.</p>'
+      : projects
+          .map((p) => {
+            const img = p.cover_image_key ? `background-image:url('/uploads/${p.cover_image_key}')` : '';
+            const href = `project.html?id=${p.id}${state.guestPreview ? '&guestpreview=1' : ''}`;
+            return `
+              <a class="showcase-card" href="${href}">
+                <div class="sc-image" style="${img}"></div>
+                <div class="sc-body">
+                  <div class="sc-name">${p.name}</div>
+                  <div class="sc-meta">${p.city || ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span></div>
+                </div>
+              </a>
+            `;
+          })
+          .join('');
 }
 
 function renderKpiRow(totals) {
@@ -520,7 +567,58 @@ function exportReportsCsv() {
 
 async function loadSettings() {
   if (state.allProjects.length === 0) state.allProjects = await api('/api/projects');
-  await Promise.all([loadUsers(), loadMaterialTypesTable()]);
+  await Promise.all([loadUsers(), loadMaterialTypesTable(), loadSiteContentForm()]);
+}
+
+async function loadSiteContentForm() {
+  const content = await api('/api/site-content');
+  document.getElementById('sc-tagline').value = content.site_tagline;
+  document.getElementById('sc-hero-eyebrow').value = content.hero_eyebrow;
+  document.getElementById('sc-hero-headline').value = content.hero_headline;
+  document.getElementById('sc-hero-description').value = content.hero_description;
+  document.getElementById('sc-lifecycle-subtitle').value = content.lifecycle_subtitle;
+  document.getElementById('sc-lifecycle-content').value = content.lifecycle_content;
+  document.getElementById('sc-execute-subtitle').value = content.execute_subtitle;
+  document.getElementById('sc-execute-steps').value = content.execute_steps;
+  document.getElementById('sc-execute-stats').value = content.execute_stats;
+  document.getElementById('sc-services-content').value = content.services_content;
+  document.getElementById('sc-contact-phone').value = content.contact_phone;
+  document.getElementById('sc-contact-email').value = content.contact_email;
+  document.getElementById('sc-contact-address').value = content.contact_address;
+  document.getElementById('sc-contact-map-link').value = content.contact_map_link;
+}
+
+function setupSiteContentForm() {
+  document.getElementById('site-content-save').addEventListener('click', async () => {
+    const errEl = document.getElementById('site-content-error');
+    const successEl = document.getElementById('site-content-success');
+    errEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+    const body = {
+      site_tagline: document.getElementById('sc-tagline').value.trim(),
+      hero_eyebrow: document.getElementById('sc-hero-eyebrow').value.trim(),
+      hero_headline: document.getElementById('sc-hero-headline').value.trim(),
+      hero_description: document.getElementById('sc-hero-description').value.trim(),
+      lifecycle_subtitle: document.getElementById('sc-lifecycle-subtitle').value.trim(),
+      lifecycle_content: document.getElementById('sc-lifecycle-content').value,
+      execute_subtitle: document.getElementById('sc-execute-subtitle').value.trim(),
+      execute_steps: document.getElementById('sc-execute-steps').value,
+      execute_stats: document.getElementById('sc-execute-stats').value,
+      services_content: document.getElementById('sc-services-content').value,
+      contact_phone: document.getElementById('sc-contact-phone').value.trim(),
+      contact_email: document.getElementById('sc-contact-email').value.trim(),
+      contact_address: document.getElementById('sc-contact-address').value.trim(),
+      contact_map_link: document.getElementById('sc-contact-map-link').value.trim(),
+    };
+    try {
+      await api('/api/settings/site-content', { method: 'PUT', body: JSON.stringify(body) });
+      successEl.textContent = 'Saved — the live site is updated.';
+      successEl.classList.remove('hidden');
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.classList.remove('hidden');
+    }
+  });
 }
 
 async function loadUsers() {
