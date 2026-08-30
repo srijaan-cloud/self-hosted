@@ -27,6 +27,8 @@
 
 * { box-sizing: border-box; }
 
+html { scroll-behavior: smooth; }
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -243,6 +245,20 @@ td.balance-clear { color: var(--green); }
 .section-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; margin-bottom: 20px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
 .section-header h2 { margin: 0; }
+
+#service-section, #contact-section { margin-top: 28px; }
+.service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.service-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; text-align: center; }
+.service-icon { font-size: 1.8rem; margin-bottom: 10px; }
+.service-card h3 { font-family: var(--font-serif); font-size: 1.02rem; margin: 0 0 8px; }
+.service-card p { color: var(--ink-soft); font-size: 0.88rem; margin: 0; line-height: 1.5; }
+
+.contact-card { display: flex; flex-direction: column; gap: 16px; }
+.contact-card > div { display: flex; flex-direction: column; gap: 2px; }
+.contact-label { font-size: 0.76rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
+.contact-card a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.contact-card a:hover { text-decoration: underline; }
+.contact-map-link { margin-top: 4px; font-size: 0.85rem; }
 
 .vendor-card summary { cursor: pointer; list-style: none; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; }
 .vendor-card summary::-webkit-details-marker { display: none; }
