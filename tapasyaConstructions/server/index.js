@@ -951,12 +951,19 @@ app.post('/api/projects/:id/cover', async (c) => {
 
 // ---------- Uploads (R2) ----------
 // Degrades gracefully until the UPLOADS binding is added to wrangler.toml.
+// 1MB cap keeps storage/costs down — the client compresses photos before
+// sending, so this should only ever reject something that couldn't be
+// compressed (e.g. a large PDF).
+const MAX_UPLOAD_BYTES = 1024 * 1024;
 
 app.post('/api/uploads', async (c) => {
   if (!c.env.UPLOADS) return c.json({ error: 'Uploads are not configured yet on this deployment' }, 503);
   const form = await c.req.formData();
   const file = form.get('file');
   if (!file || typeof file === 'string') return c.json({ error: 'file is required' }, 400);
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return c.json({ error: `File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB) — please keep uploads under 1MB. Try a compressed image or a smaller document.` }, 413);
+  }
   const key = `${crypto.randomUUID()}-${file.name}`;
   await c.env.UPLOADS.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
   return c.json({ key });

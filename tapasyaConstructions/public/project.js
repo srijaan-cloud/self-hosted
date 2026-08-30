@@ -40,6 +40,7 @@ async function boot() {
     document.getElementById('floor-plan-upload-wrap').classList.remove('hidden');
     document.getElementById('gallery-upload-wrap').classList.remove('hidden');
     document.getElementById('progress-upload-wrap').classList.remove('hidden');
+    document.querySelectorAll('.upload-hint').forEach((el) => el.classList.remove('hidden'));
   }
   // Pricing is a core project field (PATCH /api/projects/:id), same director-only
   // gate as editing the project's name/budget/status — site_supervisors can manage
@@ -258,12 +259,8 @@ function setupMaterialEntryModal() {
     statusEl.textContent = 'Uploading…';
     statusEl.classList.remove('hidden');
     try {
-      const form = new FormData();
-      form.append('file', file);
-      const res = await fetch('/api/uploads', { method: 'POST', body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-      document.getElementById('me-bill-file').dataset.key = data.key;
+      const key = await uploadFile(file);
+      document.getElementById('me-bill-file').dataset.key = key;
       statusEl.textContent = `Attached: ${file.name}`;
     } catch (err) {
       statusEl.textContent = err.message;
@@ -417,12 +414,8 @@ function setupPaymentModal() {
     statusEl.textContent = 'Uploading…';
     statusEl.classList.remove('hidden');
     try {
-      const form = new FormData();
-      form.append('file', file);
-      const res = await fetch('/api/uploads', { method: 'POST', body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-      document.getElementById('pay-receipt-file').dataset.key = data.key;
+      const key = await uploadFile(file);
+      document.getElementById('pay-receipt-file').dataset.key = key;
       statusEl.textContent = `Attached: ${file.name}`;
     } catch (err) {
       statusEl.textContent = err.message;
@@ -856,18 +849,16 @@ function renderReviews(reviews) {
 async function uploadMedia(fileInput, category) {
   const file = fileInput.files[0];
   if (!file) return;
-  const form = new FormData();
-  form.append('file', file);
-  const uploadRes = await fetch('/api/uploads', { method: 'POST', body: form });
-  const uploadData = await uploadRes.json().catch(() => ({}));
-  if (!uploadRes.ok) {
-    alert(uploadData.error || 'Upload failed');
+  try {
+    const key = await uploadFile(file);
+    await api(`/api/projects/${state.projectId}/media`, {
+      method: 'POST',
+      body: JSON.stringify({ category, image_key: key }),
+    });
+  } catch (err) {
+    alert(err.message);
     return;
   }
-  await api(`/api/projects/${state.projectId}/media`, {
-    method: 'POST',
-    body: JSON.stringify({ category, image_key: uploadData.key }),
-  });
   fileInput.value = '';
   await loadShowcase();
 }
