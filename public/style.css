@@ -193,6 +193,8 @@ label.field-label { display: block; font-size: 0.78rem; color: var(--ink-soft); 
 .kpi-card.warn .kpi-value { color: var(--amber); }
 .kpi-card.danger .kpi-value { color: var(--red); }
 .kpi-card.good .kpi-value { color: var(--green); }
+.kpi-card.kpi-link { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+.kpi-card.kpi-link:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
 
 /* ---------- Project cards ---------- */
 .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 28px; }
