@@ -1,11 +1,11 @@
 :root {
-  --bg: #f5f4f1;
+  --bg: #faf8f3;
   --card: #ffffff;
   --ink: #24221d;
   --ink-soft: #6e6a5f;
-  --line: #e5e1d8;
-  --accent: #b5651d;
-  --accent-soft: #f5e6d8;
+  --line: #e6e1d6;
+  --accent: #a97d3f;
+  --accent-soft: #f2e8d8;
   --accent2: #2f5f6f;
   --accent2-soft: #e2eef1;
   --amber: #b8842e;
@@ -16,6 +16,8 @@
   --green-soft: #e6f2e8;
   --radius: 14px;
   --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -25,7 +27,7 @@
     --ink: #f1efe7;
     --ink-soft: #a9a496;
     --line: #3a372e;
-    --accent: #d68a45;
+    --accent: #c99a5a;
     --accent-soft: #3a2c1c;
     --accent2: #5fa0b3;
     --accent2-soft: #1f3338;
@@ -43,7 +45,7 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
@@ -70,7 +72,46 @@ body {
 .hidden { display: none !important; }
 a { color: inherit; }
 
-h1 { font-size: 1.3rem; margin: 0; }
+h1 { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 600; margin: 0; }
+
+/* ---------- Editorial design language (public-facing pages) ---------- */
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+  font-weight: 700;
+}
+
+.hero-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.15;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+.hero-headline em { font-style: italic; font-weight: 500; color: var(--accent); }
+
+.btn-editorial {
+  display: inline-block;
+  width: auto;
+  padding: 14px 26px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.btn-editorial-solid { background: var(--ink); color: var(--bg); border: 1px solid var(--ink); }
+.btn-editorial-solid:hover { background: var(--accent); border-color: var(--accent); }
+.btn-editorial-outline { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+.btn-editorial-outline:hover { background: var(--ink); color: var(--bg); }
+
+.wordmark { font-family: var(--font-serif); font-size: 1.25rem; letter-spacing: 0.06em; }
 h2 { font-size: 1rem; margin: 0 0 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
 h3 { font-size: 0.95rem; margin: 18px 0 8px; }
 
@@ -108,15 +149,19 @@ label.field-label { display: block; font-size: 0.78rem; color: var(--ink-soft); 
 .btn {
   display: block;
   width: 100%;
-  padding: 11px 16px;
-  border-radius: 10px;
+  padding: 12px 16px;
+  border-radius: 4px;
   border: none;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   text-align: center;
   text-decoration: none;
   box-sizing: border-box;
 }
+/* Google's own brand button keeps natural-case text per their guidelines. */
+.btn-oauth { text-transform: none; letter-spacing: normal; font-weight: 600; font-size: 0.9rem; }
 .btn-primary { background: var(--accent); color: white; }
 .btn-secondary { background: var(--accent2-soft); color: var(--accent2); }
 .btn-oauth { display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -139,14 +184,16 @@ label.field-label { display: block; font-size: 0.78rem; color: var(--ink-soft); 
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
-.app-header .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; }
+.app-header .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; letter-spacing: 0.02em; }
 .app-header .brand .logo { font-size: 1.4rem; }
 .app-nav { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
 .app-nav a {
   padding: 8px 14px;
   border-radius: 8px;
-  font-size: 0.88rem;
+  font-size: 0.76rem;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ink-soft);
   text-decoration: none;
 }
@@ -234,8 +281,7 @@ td.balance-clear { color: var(--green); }
 .mode-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; background: var(--accent2-soft); color: var(--accent2); }
 
 /* ---------- Public showcase ---------- */
-.showcase-hero { text-align: center; margin: 8px 0 28px; }
-.showcase-hero h1 { font-size: 1.6rem; margin-bottom: 6px; }
+.showcase-hero { text-align: center; margin: 24px 0 36px; }
 
 .showcase-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
 .showcase-card {
@@ -249,7 +295,7 @@ td.balance-clear { color: var(--green); }
 }
 .showcase-card .sc-image { height: 170px; background: var(--accent2-soft) center/cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
 .showcase-card .sc-body { padding: 16px 18px; }
-.showcase-card .sc-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
+.showcase-card .sc-name { font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; margin-bottom: 4px; }
 .showcase-card .sc-meta { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 10px; }
 .showcase-card .sc-price { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
 

@@ -67,8 +67,11 @@ async function loadPublicShowcase() {
   kpiRow.style.display = 'block';
   kpiRow.innerHTML = `
     <div class="showcase-hero">
-      <h1>🏗️ Our Projects</h1>
-      <p class="auth-sub">Explore Tapasya Constructions' ongoing and completed developments.</p>
+      <div class="eyebrow" style="text-align:center;">Construction &amp; Development</div>
+      <h1 class="hero-headline">Building <em>Timeless</em> Spaces, Together</h1>
+      <p class="auth-sub" style="font-size:0.95rem; max-width:520px; margin-left:auto; margin-right:auto;">
+        Explore Tapasya Constructions' ongoing and completed developments.
+      </p>
     </div>
   `;
   document.querySelector('#view-dashboard .section-card').classList.add('hidden');
