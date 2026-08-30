@@ -91,20 +91,20 @@ function populateSelect(id, items, valueFn, labelFn, withBlank, blankLabel) {
 
 // ==================== TABS ====================
 
+async function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-view').forEach((v) => v.classList.add('hidden'));
+  document.getElementById(`tab-${tab}`).classList.remove('hidden');
+  if (tab === 'payments') await loadPayments();
+  if (tab === 'labor') await loadLabor();
+  if (tab === 'equipment') await loadEquipment();
+  if (tab === 'funding') await loadFunding();
+  if (tab === 'showcase') await loadShowcase();
+}
+
 function setupTabs() {
   document.querySelectorAll('.tab-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.tab-view').forEach((v) => v.classList.add('hidden'));
-      document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
-      const tab = btn.dataset.tab;
-      if (tab === 'payments') await loadPayments();
-      if (tab === 'labor') await loadLabor();
-      if (tab === 'equipment') await loadEquipment();
-      if (tab === 'funding') await loadFunding();
-      if (tab === 'showcase') await loadShowcase();
-    });
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 }
 
@@ -153,9 +153,10 @@ async function loadProject() {
       <div class="kpi-card"><div class="kpi-label">Budget</div><div class="kpi-value">${formatCurrency(summary.total_budget)}</div></div>
       <div class="kpi-card"><div class="kpi-label">Funding Received</div><div class="kpi-value">${formatCurrency(summary.funding_received)}</div></div>
       <div class="kpi-card"><div class="kpi-label">Committed</div><div class="kpi-value">${formatCurrency(summary.committed)}</div></div>
-      <div class="kpi-card good"><div class="kpi-label">Paid</div><div class="kpi-value">${formatCurrency(summary.paid)}</div></div>
+      <div class="kpi-card good kpi-link" id="kpi-paid"><div class="kpi-label">Paid</div><div class="kpi-value">${formatCurrency(summary.paid)}</div></div>
       <div class="kpi-card ${pendingClass}"><div class="kpi-label">Balance Due</div><div class="kpi-value">${formatCurrency(summary.balance_due)}</div></div>
     `;
+    document.getElementById('kpi-paid').addEventListener('click', () => switchTab('payments'));
   }
 }
 
