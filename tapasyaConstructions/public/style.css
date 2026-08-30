@@ -75,6 +75,7 @@ h1 { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 600; margin
   margin: 0 0 16px;
 }
 .hero-headline em { font-style: italic; font-weight: 500; color: var(--accent); }
+.hero-tagline { font-style: italic; font-size: 1.05rem; color: var(--accent2); text-align: center; margin: 0 0 16px; }
 
 .btn-editorial {
   display: inline-block;
@@ -260,6 +261,28 @@ td.balance-clear { color: var(--green); }
 .contact-card a { color: var(--accent); text-decoration: none; font-weight: 600; }
 .contact-card a:hover { text-decoration: underline; }
 .contact-map-link { margin-top: 4px; font-size: 0.85rem; }
+
+.home-block { margin: 48px 0; }
+.section-header-center { text-align: center; margin-bottom: 28px; }
+.section-header-center h2 { font-family: var(--font-serif); font-size: 1.6rem; font-weight: 600; margin: 0 0 8px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.section-header-center .auth-sub { margin: 0 auto; max-width: 560px; }
+
+.lifecycle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.lifecycle-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
+.lifecycle-card h3 { font-family: var(--font-serif); font-size: 1.05rem; margin: 0 0 14px; color: var(--ink); }
+.lifecycle-card ul { list-style: none; margin: 0; padding: 0; }
+.lifecycle-card li { padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 0.88rem; color: var(--ink-soft); }
+.lifecycle-card li:last-child { border-bottom: none; }
+
+.execute-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 36px; }
+.execute-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; border-left: 3px solid var(--accent); }
+.execute-number { font-family: var(--font-serif); font-size: 1.8rem; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.execute-card h3 { font-family: var(--font-serif); font-size: 1.02rem; margin: 0 0 8px; color: var(--ink); }
+.execute-card p { color: var(--ink-soft); font-size: 0.88rem; margin: 0; line-height: 1.5; }
+
+.stats-row { display: flex; justify-content: center; gap: 60px; flex-wrap: wrap; text-align: center; }
+.stat-number { font-family: var(--font-serif); font-size: 2.2rem; font-weight: 700; color: var(--accent); }
+.stat-label { color: var(--ink-soft); font-size: 0.85rem; margin-top: 4px; }
 
 .vendor-card summary { cursor: pointer; list-style: none; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; }
 .vendor-card summary::-webkit-details-marker { display: none; }
