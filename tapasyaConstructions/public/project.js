@@ -61,7 +61,20 @@ async function boot() {
   document.getElementById('pay-mode').innerHTML = paymentModeOptionsHtml();
   document.getElementById('fd-mode').innerHTML = paymentModeOptionsHtml();
 
-  if (state.me.role === 'director') document.getElementById('edit-project-btn').classList.remove('hidden');
+  if (state.me.role === 'director') {
+    document.getElementById('edit-project-btn').classList.remove('hidden');
+    document.getElementById('delete-project-btn').classList.remove('hidden');
+    document.getElementById('delete-project-btn').addEventListener('click', async () => {
+      if (
+        !confirm(
+          `Delete "${state.project.name}"? This permanently removes the project and everything in it — materials, payments, labor, equipment, funding, photos, reviews. This cannot be undone.`
+        )
+      )
+        return;
+      await api(`/api/projects/${state.projectId}`, { method: 'DELETE' });
+      window.location.href = '/';
+    });
+  }
 
   await loadProject();
   await loadMaterials();
@@ -336,10 +349,18 @@ async function loadPayments() {
         <td>${formatDate(p.date)}</td><td>${p.category}</td><td class="num">${formatCurrency(p.amount)}</td>
         <td><span class="mode-pill">${paymentModeLabel(p.payment_mode)}</span></td><td>${ref}</td>
         <td>${p.paid_to || '—'}</td><td>${p.paid_by || '—'}</td><td>${p.remarks || '—'}</td>
-        <td>${state.canWrite ? `<button class="btn btn-small btn-danger delete-payment" data-id="${p.id}">Delete</button>` : ''}</td>
+        <td>${
+          state.canWrite
+            ? `<button class="btn btn-small btn-secondary edit-payment" data-id="${p.id}">Edit</button>
+               <button class="btn btn-small btn-danger delete-payment" data-id="${p.id}">Delete</button>`
+            : ''
+        }</td>
       </tr>`;
     })
     .join('');
+  tbody.querySelectorAll('.edit-payment').forEach((btn) => {
+    btn.addEventListener('click', () => openPaymentModal(filtered.find((p) => p.id === Number(btn.dataset.id))));
+  });
   tbody.querySelectorAll('.delete-payment').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete this payment?')) return;
@@ -359,22 +380,30 @@ function togglePaymentModeFields() {
   document.getElementById('pay-transaction-wrap').classList.toggle('hidden', mode === 'cash' || mode === 'cheque');
 }
 
+function openPaymentModal(payment) {
+  document.getElementById('payment-modal-title').textContent = payment ? 'Edit Payment' : 'Add Payment';
+  document.getElementById('pay-id').value = payment ? payment.id : '';
+  document.getElementById('pay-date').value = payment ? payment.date : new Date().toISOString().slice(0, 10);
+  document.getElementById('pay-amount').value = payment ? payment.amount : '';
+  document.getElementById('pay-category').value = payment ? payment.category : 'material';
+  document.getElementById('pay-mode').value = payment ? payment.payment_mode : 'cash';
+  document.getElementById('pay-transaction-id').value = payment ? payment.transaction_id || '' : '';
+  document.getElementById('pay-cheque-number').value = payment ? payment.cheque_number || '' : '';
+  document.getElementById('pay-bank-name').value = payment ? payment.bank_name || '' : '';
+  document.getElementById('pay-paid-to').value = payment ? payment.paid_to || '' : '';
+  document.getElementById('pay-paid-by').value = payment ? payment.paid_by || '' : '';
+  document.getElementById('pay-remarks').value = payment ? payment.remarks || '' : '';
+  document.getElementById('pay-material-entry').value = payment && payment.material_entry_id ? payment.material_entry_id : '';
+  document.getElementById('pay-receipt-file').value = '';
+  delete document.getElementById('pay-receipt-file').dataset.key;
+  document.getElementById('pay-upload-status').classList.add('hidden');
+  document.getElementById('payment-modal-error').classList.add('hidden');
+  togglePaymentModeFields();
+  openModal('payment-modal');
+}
+
 function setupPaymentModal() {
-  document.getElementById('new-payment-btn').addEventListener('click', () => {
-    document.getElementById('pay-date').value = new Date().toISOString().slice(0, 10);
-    ['pay-amount', 'pay-transaction-id', 'pay-cheque-number', 'pay-bank-name', 'pay-paid-to', 'pay-paid-by', 'pay-remarks'].forEach(
-      (id) => (document.getElementById(id).value = '')
-    );
-    document.getElementById('pay-category').value = 'material';
-    document.getElementById('pay-mode').value = 'cash';
-    document.getElementById('pay-material-entry').value = '';
-    document.getElementById('pay-receipt-file').value = '';
-    delete document.getElementById('pay-receipt-file').dataset.key;
-    document.getElementById('pay-upload-status').classList.add('hidden');
-    document.getElementById('payment-modal-error').classList.add('hidden');
-    togglePaymentModeFields();
-    openModal('payment-modal');
-  });
+  document.getElementById('new-payment-btn').addEventListener('click', () => openPaymentModal(null));
 
   document.getElementById('pay-mode').addEventListener('change', togglePaymentModeFields);
 
@@ -422,7 +451,12 @@ function setupPaymentModal() {
       return;
     }
     try {
-      await api('/api/payments', { method: 'POST', body: JSON.stringify(body) });
+      const id = document.getElementById('pay-id').value;
+      if (id) {
+        await api(`/api/payments/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+      } else {
+        await api('/api/payments', { method: 'POST', body: JSON.stringify(body) });
+      }
       closeModal('payment-modal');
       await loadPayments();
       await loadMaterials();
@@ -450,10 +484,18 @@ async function loadLabor() {
         <td class="num">${l.worker_count}</td><td class="num">${formatCurrency(l.wage_rate)}</td>
         <td class="num">${formatCurrency(l.amount_total)}</td><td class="num">${formatCurrency(l.amount_paid)}</td>
         <td class="num ${l.amount_balance > 0 ? 'balance-due' : 'balance-clear'}">${formatCurrency(l.amount_balance)}</td>
-        <td>${state.canWrite ? `<button class="btn btn-small btn-danger delete-labor" data-id="${l.id}">Delete</button>` : ''}</td>
+        <td>${
+          state.canWrite
+            ? `<button class="btn btn-small btn-secondary edit-labor" data-id="${l.id}">Edit</button>
+               <button class="btn btn-small btn-danger delete-labor" data-id="${l.id}">Delete</button>`
+            : ''
+        }</td>
       </tr>`
     )
     .join('');
+  tbody.querySelectorAll('.edit-labor').forEach((btn) => {
+    btn.addEventListener('click', () => openLaborModal(rows.find((l) => l.id === Number(btn.dataset.id))));
+  });
   tbody.querySelectorAll('.delete-labor').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete this labor entry?')) return;
@@ -463,14 +505,23 @@ async function loadLabor() {
   });
 }
 
+function openLaborModal(entry) {
+  document.getElementById('labor-modal-title').textContent = entry ? 'Edit Labor Entry' : 'Add Labor Entry';
+  document.getElementById('lb-id').value = entry ? entry.id : '';
+  document.getElementById('lb-date').value = entry ? entry.date : new Date().toISOString().slice(0, 10);
+  document.getElementById('lb-trade').value = entry ? entry.trade : 'mason';
+  document.getElementById('lb-contractor').value = entry ? entry.contractor_name || '' : '';
+  document.getElementById('lb-count').value = entry ? entry.worker_count : '';
+  document.getElementById('lb-rate').value = entry ? entry.wage_rate : '';
+  document.getElementById('lb-total').value = entry ? entry.amount_total : '';
+  document.getElementById('lb-paid').value = entry ? entry.amount_paid : '';
+  document.getElementById('lb-notes').value = entry ? entry.notes || '' : '';
+  document.getElementById('labor-modal-error').classList.add('hidden');
+  openModal('labor-modal');
+}
+
 function setupLaborModal() {
-  document.getElementById('new-labor-btn').addEventListener('click', () => {
-    document.getElementById('lb-date').value = new Date().toISOString().slice(0, 10);
-    ['lb-contractor', 'lb-count', 'lb-rate', 'lb-total', 'lb-paid', 'lb-notes'].forEach((id) => (document.getElementById(id).value = ''));
-    document.getElementById('lb-trade').value = 'mason';
-    document.getElementById('labor-modal-error').classList.add('hidden');
-    openModal('labor-modal');
-  });
+  document.getElementById('new-labor-btn').addEventListener('click', () => openLaborModal(null));
   ['lb-count', 'lb-rate'].forEach((id) =>
     document.getElementById(id).addEventListener('input', () => {
       const count = parseFloat(document.getElementById('lb-count').value) || 0;
@@ -497,7 +548,12 @@ function setupLaborModal() {
       errEl.classList.remove('hidden');
       return;
     }
-    await api('/api/labor-entries', { method: 'POST', body: JSON.stringify(body) });
+    const id = document.getElementById('lb-id').value;
+    if (id) {
+      await api(`/api/labor-entries/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    } else {
+      await api('/api/labor-entries', { method: 'POST', body: JSON.stringify(body) });
+    }
     closeModal('labor-modal');
     await loadLabor();
     await loadProject();
@@ -520,10 +576,18 @@ async function loadEquipment() {
         <td class="num">${formatCurrency(e.rate)}/${e.rate_unit.replace('per_', '')}</td>
         <td class="num">${formatCurrency(e.amount_total)}</td><td class="num">${formatCurrency(e.amount_paid)}</td>
         <td class="num ${e.amount_balance > 0 ? 'balance-due' : 'balance-clear'}">${formatCurrency(e.amount_balance)}</td>
-        <td>${state.canWrite ? `<button class="btn btn-small btn-danger delete-equipment" data-id="${e.id}">Delete</button>` : ''}</td>
+        <td>${
+          state.canWrite
+            ? `<button class="btn btn-small btn-secondary edit-equipment" data-id="${e.id}">Edit</button>
+               <button class="btn btn-small btn-danger delete-equipment" data-id="${e.id}">Delete</button>`
+            : ''
+        }</td>
       </tr>`
     )
     .join('');
+  tbody.querySelectorAll('.edit-equipment').forEach((btn) => {
+    btn.addEventListener('click', () => openEquipmentModal(rows.find((e) => e.id === Number(btn.dataset.id))));
+  });
   tbody.querySelectorAll('.delete-equipment').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete this equipment entry?')) return;
@@ -533,15 +597,24 @@ async function loadEquipment() {
   });
 }
 
+function openEquipmentModal(entry) {
+  document.getElementById('equipment-modal-title').textContent = entry ? 'Edit Equipment Entry' : 'Add Equipment Entry';
+  document.getElementById('eq-id').value = entry ? entry.id : '';
+  document.getElementById('eq-name').value = entry ? entry.equipment_name : '';
+  document.getElementById('eq-vendor').value = entry ? entry.vendor || '' : '';
+  document.getElementById('eq-from').value = entry ? entry.date_from || '' : '';
+  document.getElementById('eq-to').value = entry ? entry.date_to || '' : '';
+  document.getElementById('eq-rate').value = entry ? entry.rate : '';
+  document.getElementById('eq-rate-unit').value = entry ? entry.rate_unit : 'per_day';
+  document.getElementById('eq-total').value = entry ? entry.amount_total : '';
+  document.getElementById('eq-paid').value = entry ? entry.amount_paid : '';
+  document.getElementById('eq-notes').value = entry ? entry.notes || '' : '';
+  document.getElementById('equipment-modal-error').classList.add('hidden');
+  openModal('equipment-modal');
+}
+
 function setupEquipmentModal() {
-  document.getElementById('new-equipment-btn').addEventListener('click', () => {
-    ['eq-name', 'eq-vendor', 'eq-from', 'eq-to', 'eq-rate', 'eq-total', 'eq-paid', 'eq-notes'].forEach(
-      (id) => (document.getElementById(id).value = '')
-    );
-    document.getElementById('eq-rate-unit').value = 'per_day';
-    document.getElementById('equipment-modal-error').classList.add('hidden');
-    openModal('equipment-modal');
-  });
+  document.getElementById('new-equipment-btn').addEventListener('click', () => openEquipmentModal(null));
   document.getElementById('eq-save').addEventListener('click', async () => {
     const errEl = document.getElementById('equipment-modal-error');
     errEl.classList.add('hidden');
@@ -562,7 +635,12 @@ function setupEquipmentModal() {
       errEl.classList.remove('hidden');
       return;
     }
-    await api('/api/equipment-entries', { method: 'POST', body: JSON.stringify(body) });
+    const id = document.getElementById('eq-id').value;
+    if (id) {
+      await api(`/api/equipment-entries/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    } else {
+      await api('/api/equipment-entries', { method: 'POST', body: JSON.stringify(body) });
+    }
     closeModal('equipment-modal');
     await loadEquipment();
     await loadProject();
@@ -584,10 +662,18 @@ async function loadFunding() {
         <td>${formatDate(f.date)}</td><td>${f.source}</td><td class="num">${formatCurrency(f.amount)}</td>
         <td><span class="mode-pill">${paymentModeLabel(f.payment_mode)}</span></td><td>${f.transaction_id || '—'}</td>
         <td>${f.remarks || '—'}</td>
-        <td>${state.canWrite ? `<button class="btn btn-small btn-danger delete-funding" data-id="${f.id}">Delete</button>` : ''}</td>
+        <td>${
+          state.canWrite
+            ? `<button class="btn btn-small btn-secondary edit-funding" data-id="${f.id}">Edit</button>
+               <button class="btn btn-small btn-danger delete-funding" data-id="${f.id}">Delete</button>`
+            : ''
+        }</td>
       </tr>`
     )
     .join('');
+  tbody.querySelectorAll('.edit-funding').forEach((btn) => {
+    btn.addEventListener('click', () => openFundingModal(rows.find((f) => f.id === Number(btn.dataset.id))));
+  });
   tbody.querySelectorAll('.delete-funding').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete this funding entry?')) return;
@@ -598,15 +684,21 @@ async function loadFunding() {
   });
 }
 
+function openFundingModal(entry) {
+  document.getElementById('funding-modal-title').textContent = entry ? 'Edit Funding Entry' : 'Add Funding Entry';
+  document.getElementById('fd-id').value = entry ? entry.id : '';
+  document.getElementById('fd-date').value = entry ? entry.date : new Date().toISOString().slice(0, 10);
+  document.getElementById('fd-source').value = entry ? entry.source : 'client';
+  document.getElementById('fd-amount').value = entry ? entry.amount : '';
+  document.getElementById('fd-mode').value = entry ? entry.payment_mode : 'netbanking';
+  document.getElementById('fd-transaction-id').value = entry ? entry.transaction_id || '' : '';
+  document.getElementById('fd-remarks').value = entry ? entry.remarks || '' : '';
+  document.getElementById('funding-modal-error').classList.add('hidden');
+  openModal('funding-modal');
+}
+
 function setupFundingModal() {
-  document.getElementById('new-funding-btn').addEventListener('click', () => {
-    document.getElementById('fd-date').value = new Date().toISOString().slice(0, 10);
-    ['fd-amount', 'fd-transaction-id', 'fd-remarks'].forEach((id) => (document.getElementById(id).value = ''));
-    document.getElementById('fd-source').value = 'client';
-    document.getElementById('fd-mode').value = 'netbanking';
-    document.getElementById('funding-modal-error').classList.add('hidden');
-    openModal('funding-modal');
-  });
+  document.getElementById('new-funding-btn').addEventListener('click', () => openFundingModal(null));
   document.getElementById('fd-save').addEventListener('click', async () => {
     const errEl = document.getElementById('funding-modal-error');
     errEl.classList.add('hidden');
@@ -624,7 +716,12 @@ function setupFundingModal() {
       errEl.classList.remove('hidden');
       return;
     }
-    await api('/api/project-funding', { method: 'POST', body: JSON.stringify(body) });
+    const id = document.getElementById('fd-id').value;
+    if (id) {
+      await api(`/api/project-funding/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    } else {
+      await api('/api/project-funding', { method: 'POST', body: JSON.stringify(body) });
+    }
     closeModal('funding-modal');
     await loadFunding();
     await loadProject();

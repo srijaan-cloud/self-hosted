@@ -433,7 +433,18 @@ app.patch('/api/projects/:id', requireDirector, async (c) => {
 
 app.delete('/api/projects/:id', requireDirector, async (c) => {
   const db = getDb(c.env);
-  await db.prepare('DELETE FROM projects WHERE id = ?').run(c.req.param('id'));
+  const id = c.req.param('id');
+  // No FK cascade in SQLite by default — delete every dependent table explicitly,
+  // so this is a real clean removal rather than leaving orphaned rows behind.
+  await db.prepare('DELETE FROM payments WHERE project_id = ?').run(id);
+  await db.prepare('DELETE FROM material_entries WHERE project_id = ?').run(id);
+  await db.prepare('DELETE FROM labor_entries WHERE project_id = ?').run(id);
+  await db.prepare('DELETE FROM equipment_entries WHERE project_id = ?').run(id);
+  await db.prepare('DELETE FROM project_funding WHERE project_id = ?').run(id);
+  await db.prepare('DELETE FROM project_media WHERE project_id = ?').run(id);
+  await db.prepare('DELETE FROM project_reviews WHERE project_id = ?').run(id);
+  await db.prepare('DELETE FROM project_assignments WHERE project_id = ?').run(id);
+  await db.prepare('DELETE FROM projects WHERE id = ?').run(id);
   return c.json({ ok: true });
 });
 

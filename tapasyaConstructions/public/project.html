@@ -24,6 +24,7 @@
     <div class="section-header">
       <h1 id="project-name">Loading…</h1>
       <button id="edit-project-btn" class="btn btn-secondary btn-inline hidden">Edit Project</button>
+      <button id="delete-project-btn" class="btn btn-danger btn-inline hidden">Delete Project</button>
     </div>
     <p id="project-meta" class="auth-sub" style="margin-top:-8px;"></p>
 
@@ -274,7 +275,8 @@
 
   <div id="payment-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="modal-header"><h2>Add Payment</h2><button class="icon-btn modal-close" data-modal="payment-modal">✕</button></div>
+      <div class="modal-header"><h2 id="payment-modal-title">Add Payment</h2><button class="icon-btn modal-close" data-modal="payment-modal">✕</button></div>
+      <input type="hidden" id="pay-id" />
       <div class="form-grid">
         <div><label class="field-label">Date</label><input id="pay-date" type="date" /></div>
         <div><label class="field-label">Amount (₹)</label><input id="pay-amount" type="number" step="0.01" /></div>
@@ -315,7 +317,8 @@
 
   <div id="labor-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="modal-header"><h2>Add Labor Entry</h2><button class="icon-btn modal-close" data-modal="labor-modal">✕</button></div>
+      <div class="modal-header"><h2 id="labor-modal-title">Add Labor Entry</h2><button class="icon-btn modal-close" data-modal="labor-modal">✕</button></div>
+      <input type="hidden" id="lb-id" />
       <div class="form-grid">
         <div><label class="field-label">Date</label><input id="lb-date" type="date" /></div>
         <div>
@@ -347,7 +350,8 @@
 
   <div id="equipment-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="modal-header"><h2>Add Equipment Entry</h2><button class="icon-btn modal-close" data-modal="equipment-modal">✕</button></div>
+      <div class="modal-header"><h2 id="equipment-modal-title">Add Equipment Entry</h2><button class="icon-btn modal-close" data-modal="equipment-modal">✕</button></div>
+      <input type="hidden" id="eq-id" />
       <div class="form-grid">
         <div class="full"><label class="field-label">Equipment Name</label><input id="eq-name" type="text" /></div>
         <div><label class="field-label">Vendor</label><input id="eq-vendor" type="text" /></div>
@@ -377,7 +381,8 @@
 
   <div id="funding-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="modal-header"><h2>Add Funding Entry</h2><button class="icon-btn modal-close" data-modal="funding-modal">✕</button></div>
+      <div class="modal-header"><h2 id="funding-modal-title">Add Funding Entry</h2><button class="icon-btn modal-close" data-modal="funding-modal">✕</button></div>
+      <input type="hidden" id="fd-id" />
       <div class="form-grid">
         <div><label class="field-label">Date</label><input id="fd-date" type="date" /></div>
         <div>
