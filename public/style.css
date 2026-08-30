@@ -247,11 +247,12 @@ td.balance-clear { color: var(--green); }
 .section-header h2 { margin: 0; }
 
 #service-section, #contact-section { margin-top: 28px; }
-.service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
-.service-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; text-align: center; }
-.service-icon { font-size: 1.8rem; margin-bottom: 10px; }
-.service-card h3 { font-family: var(--font-serif); font-size: 1.02rem; margin: 0 0 8px; }
-.service-card p { color: var(--ink-soft); font-size: 0.88rem; margin: 0; line-height: 1.5; }
+.service-categories { display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px; }
+.service-category h3 { font-family: var(--font-serif); font-size: 1.05rem; margin: 0 0 14px; color: var(--accent); }
+.service-category dl { margin: 0; }
+.service-category dt { font-weight: 700; margin-top: 12px; }
+.service-category dt:first-of-type { margin-top: 0; }
+.service-category dd { margin: 2px 0 0; color: var(--ink-soft); font-size: 0.9rem; line-height: 1.5; }
 
 .contact-card { display: flex; flex-direction: column; gap: 16px; }
 .contact-card > div { display: flex; flex-direction: column; gap: 2px; }
