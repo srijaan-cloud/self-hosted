@@ -151,24 +151,26 @@ const ENTITY_SCHEMAS = {
       category: ['category'],
       cheque_number: ['chequenumber', 'chequeno'],
       bank_name: ['bankname', 'bank'],
+      paid_to_account: ['toaccountnumber', 'accountnumber'],
     },
-    inferenceAliases: { modeHint: ['toaccountnumber', 'accountnumber'] },
     build(get, getRaw, warn) {
       const date = toDateISO(get('date'));
       const amount = toNumber(get('amount'));
       if (!date || !amount) return null;
       if (date.ambiguous) warn('ambiguous date format, assumed DD/MM');
       const txn = get('transaction_id');
+      const account = get('paid_to_account');
       return {
         date: date.iso,
         amount,
         category: get('category') || inferCategory(get('remarks')),
-        payment_mode: get('payment_mode') || inferPaymentMode(getRaw('modeHint')),
+        payment_mode: get('payment_mode') || inferPaymentMode(account),
         transaction_id: txn && String(txn).trim().toLowerCase() !== 'cash' ? String(txn).trim() : null,
         cheque_number: get('cheque_number') || null,
         bank_name: get('bank_name') || null,
         paid_by: get('paid_by') || null,
         paid_to: get('paid_to') || null,
+        paid_to_account: account && String(account).trim().toLowerCase() !== 'cash' ? String(account).trim() : null,
         remarks: get('remarks') || null,
       };
     },
