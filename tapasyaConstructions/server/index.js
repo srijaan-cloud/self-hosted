@@ -545,16 +545,25 @@ crudRoutes({
 
 // ---------- Payments ----------
 
-async function syncMaterialEntryPaid(db, materialEntryId) {
-  if (!materialEntryId) return;
-  const row = await db.prepare('SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE material_entry_id = ?').get(materialEntryId);
-  await db.prepare('UPDATE material_entries SET amount_paid = ? WHERE id = ?').run(row.total, materialEntryId);
+async function syncLinkedEntryPaid(db, table, fkColumn, entryId) {
+  if (!entryId) return;
+  const row = await db.prepare(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE ${fkColumn} = ?`).get(entryId);
+  await db.prepare(`UPDATE ${table} SET amount_paid = ? WHERE id = ?`).run(row.total, entryId);
+}
+const syncMaterialEntryPaid = (db, id) => syncLinkedEntryPaid(db, 'material_entries', 'material_entry_id', id);
+const syncLaborEntryPaid = (db, id) => syncLinkedEntryPaid(db, 'labor_entries', 'labor_entry_id', id);
+const syncEquipmentEntryPaid = (db, id) => syncLinkedEntryPaid(db, 'equipment_entries', 'equipment_entry_id', id);
+
+async function syncAllLinkedEntries(db, payment) {
+  await syncMaterialEntryPaid(db, payment.material_entry_id);
+  await syncLaborEntryPaid(db, payment.labor_entry_id);
+  await syncEquipmentEntryPaid(db, payment.equipment_entry_id);
 }
 
 const PAYMENT_FIELDS = [
-  'project_id', 'material_entry_id', 'category', 'date', 'amount', 'payment_mode',
-  'transaction_id', 'cheque_number', 'bank_name', 'paid_to', 'paid_to_account', 'paid_by',
-  'receipt_attachment_key', 'remarks',
+  'project_id', 'material_entry_id', 'labor_entry_id', 'equipment_entry_id', 'category',
+  'date', 'amount', 'payment_mode', 'transaction_id', 'cheque_number', 'bank_name',
+  'paid_to', 'paid_to_account', 'paid_by', 'receipt_attachment_key', 'remarks',
 ];
 
 app.get('/api/payments', async (c) => {
@@ -595,8 +604,8 @@ app.post('/api/payments', async (c) => {
   const cols = PAYMENT_FIELDS.filter((f) => f in body);
   const placeholders = cols.map(() => '?').join(', ');
   const res = await db.prepare(`INSERT INTO payments (${cols.join(', ')}) VALUES (${placeholders})`).run(...cols.map((f) => body[f]));
-  await syncMaterialEntryPaid(db, body.material_entry_id);
   const row = await db.prepare('SELECT * FROM payments WHERE id = ?').get(res.lastInsertRowid);
+  await syncAllLinkedEntries(db, row);
   return c.json(row);
 });
 
@@ -611,11 +620,9 @@ app.patch('/api/payments/:id', async (c) => {
     const setClause = cols.map((f) => `${f} = ?`).join(', ');
     await db.prepare(`UPDATE payments SET ${setClause} WHERE id = ?`).run(...cols.map((f) => body[f]), c.req.param('id'));
   }
-  await syncMaterialEntryPaid(db, existing.material_entry_id);
-  if ('material_entry_id' in body && body.material_entry_id !== existing.material_entry_id) {
-    await syncMaterialEntryPaid(db, body.material_entry_id);
-  }
   const row = await db.prepare('SELECT * FROM payments WHERE id = ?').get(c.req.param('id'));
+  await syncAllLinkedEntries(db, existing);
+  await syncAllLinkedEntries(db, row);
   return c.json(row);
 });
 
@@ -625,7 +632,7 @@ app.delete('/api/payments/:id', async (c) => {
   if (!existing) return c.json({ error: 'not_found' }, 404);
   if (!(await canWriteProject(c, existing.project_id))) return c.json({ error: 'forbidden' }, 403);
   await db.prepare('DELETE FROM payments WHERE id = ?').run(c.req.param('id'));
-  await syncMaterialEntryPaid(db, existing.material_entry_id);
+  await syncAllLinkedEntries(db, existing);
   return c.json({ ok: true });
 });
 
@@ -760,16 +767,18 @@ app.get('/api/dashboard', async (c) => {
   const fundingMap = {};
   fundingRows.forEach((r) => (fundingMap[r.project_id] = r.total));
 
-  // Payments not linked to a material entry (material_entry_id IS NULL) — e.g.
-  // imported bank-transaction records, or labor/equipment/misc payments logged
-  // directly — have no separate "committed" line item of their own. Recording
-  // the payment IS the commitment, so it counts as both committed and paid;
-  // otherwise they'd be invisible to these totals even though real money moved.
-  // (Payments linked to a material entry already flow into that entry's own
-  // amount_paid via syncMaterialEntryPaid, so they're excluded here to avoid
-  // double-counting.)
+  // Payments not linked to any material/labor/equipment entry — e.g. imported
+  // bank-transaction records that couldn't be confidently categorized, or
+  // misc/transport/advance payments logged directly — have no separate
+  // "committed" line item of their own. Recording the payment IS the
+  // commitment, so it counts as both committed and paid; otherwise it'd be
+  // invisible to these totals even though real money moved. (Linked payments
+  // already flow into their entry's own amount_paid via syncAllLinkedEntries,
+  // so they're excluded here to avoid double-counting.)
   const unlinkedPaymentRows = await db
-    .prepare('SELECT project_id, COALESCE(SUM(amount),0) as total FROM payments WHERE material_entry_id IS NULL GROUP BY project_id')
+    .prepare(
+      'SELECT project_id, COALESCE(SUM(amount),0) as total FROM payments WHERE material_entry_id IS NULL AND labor_entry_id IS NULL AND equipment_entry_id IS NULL GROUP BY project_id'
+    )
     .all();
   const unlinkedPaymentMap = {};
   unlinkedPaymentRows.forEach((r) => (unlinkedPaymentMap[r.project_id] = r.total));
@@ -803,10 +812,7 @@ app.get('/api/dashboard', async (c) => {
     { total_budget: 0, committed: 0, paid: 0, balance_due: 0, funding_received: 0 }
   );
 
-  const recentMaterials = await db.prepare('SELECT * FROM material_entries ORDER BY id DESC LIMIT 8').all();
-  const recentPayments = await db.prepare('SELECT * FROM payments ORDER BY id DESC LIMIT 8').all();
-
-  return c.json({ projects: projectSummaries, totals, recentMaterials, recentPayments });
+  return c.json({ projects: projectSummaries, totals });
 });
 
 // ---------- Public showcase (viewer/guest) ----------

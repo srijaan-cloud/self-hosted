@@ -56,7 +56,6 @@ async function loadDashboard() {
   state.dashboard = await api('/api/dashboard');
   renderKpiRow(state.dashboard.totals);
   renderProjectGrid(state.dashboard.projects);
-  renderActivityFeed(state.dashboard.recentMaterials, state.dashboard.recentPayments);
 }
 
 // ==================== PUBLIC SHOWCASE (viewer / guest) ====================
@@ -173,22 +172,6 @@ function renderProjectGrid(projects) {
       deleteProject(p);
     });
   });
-}
-
-function renderActivityFeed(materials, payments) {
-  const feed = document.getElementById('activity-feed');
-  const items = [
-    ...materials.map((m) => ({ date: m.date, text: `Material order: ${formatCurrency(m.amount_total)} (${m.status})`, meta: m.invoice_number || '' })),
-    ...payments.map((p) => ({ date: p.date, text: `Payment: ${formatCurrency(p.amount)} via ${paymentModeLabel(p.payment_mode)}`, meta: p.paid_to || '' })),
-  ].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 12);
-
-  if (items.length === 0) {
-    feed.innerHTML = '<p class="empty-state">No activity yet.</p>';
-    return;
-  }
-  feed.innerHTML = items
-    .map((i) => `<div class="activity-item"><span>${i.text}</span><span class="a-meta">${formatDate(i.date)}${i.meta ? ' · ' + i.meta : ''}</span></div>`)
-    .join('');
 }
 
 // ==================== NEW / EDIT PROJECT ====================
