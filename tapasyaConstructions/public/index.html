@@ -141,10 +141,22 @@
             <option value="completed">Completed</option>
           </select>
         </div>
-        <div><label class="field-label">Total Budget (₹)</label><input id="pm-budget" type="number" step="0.01" /></div>
+        <div class="full"><label class="field-label">Owner Phone Number(s)</label><input id="pm-owner-phone" type="text" placeholder="e.g. 9848012345, 9948098765" /></div>
       </div>
       <label class="field-label">Description</label>
       <textarea id="pm-description"></textarea>
+      <h3 style="margin:16px 0 8px; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft);">Budget &amp; Public Page Pricing</h3>
+      <div class="form-grid">
+        <div><label class="field-label">Price per sq.ft (₹)</label><input id="pm-price-sqft" type="number" step="0.01" /></div>
+        <div><label class="field-label">Total Area (sq.ft)</label><input id="pm-total-area" type="number" step="0.01" /></div>
+        <div><label class="field-label">Extra Cost (₹)</label><input id="pm-extra-cost" type="number" step="0.01" /></div>
+        <div><label class="field-label">Total Budget (₹) — auto: price × area + extra</label><input id="pm-budget" type="number" step="0.01" /></div>
+        <div><label class="field-label">Sold Price — total (₹, completed projects)</label><input id="pm-sold-price" type="number" step="0.01" /></div>
+      </div>
+      <label class="field-label">Extra Cost Details</label>
+      <input id="pm-extra-cost-notes" type="text" placeholder="e.g. GST, registration, premium fittings" />
+      <label class="field-label">Amenities (comma-separated)</label>
+      <input id="pm-amenities" type="text" placeholder="Clubhouse, Gym, Kids' Play Area, 24x7 Security" />
       <p id="project-modal-error" class="auth-error hidden"></p>
       <div class="modal-actions">
         <button class="btn btn-secondary modal-close" data-modal="project-modal">Cancel</button>

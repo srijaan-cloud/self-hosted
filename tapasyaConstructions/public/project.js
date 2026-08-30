@@ -137,7 +137,8 @@ async function loadProject() {
   document.title = `${p.name} — Tapasya Constructions`;
   document.getElementById('project-name').textContent = p.name;
   document.getElementById('project-meta').innerHTML =
-    `${p.client_name || ''}${p.city ? ' · ' + p.city : ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span>`;
+    `${p.client_name || ''}${p.city ? ' · ' + p.city : ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span>` +
+    (p.owner_phone ? ` · Owner: ${p.owner_phone}` : '');
   document.getElementById('project-description').textContent = p.description || 'No description provided.';
   document.getElementById('project-timeline').innerHTML =
     `Start: ${formatDate(p.start_date)} &nbsp;·&nbsp; Expected completion: ${formatDate(p.expected_end_date)}` +
@@ -159,6 +160,10 @@ async function loadProject() {
 }
 
 function setupEditProjectModal() {
+  ['ep-price-sqft', 'ep-total-area', 'ep-extra-cost'].forEach((id) =>
+    document.getElementById(id).addEventListener('input', () => autoCalcBudget('ep'))
+  );
+
   document.getElementById('edit-project-btn').addEventListener('click', () => {
     const p = state.project;
     document.getElementById('ep-name').value = p.name || '';
@@ -170,8 +175,11 @@ function setupEditProjectModal() {
     document.getElementById('ep-status').value = p.status;
     document.getElementById('ep-budget').value = p.total_budget;
     document.getElementById('ep-description').value = p.description || '';
+    document.getElementById('ep-owner-phone').value = p.owner_phone || '';
     document.getElementById('ep-price-sqft').value = p.price_per_sqft || '';
     document.getElementById('ep-total-area').value = p.total_area_sqft || '';
+    document.getElementById('ep-extra-cost').value = p.extra_cost || '';
+    document.getElementById('ep-extra-cost-notes').value = p.extra_cost_notes || '';
     document.getElementById('ep-sold-price').value = p.sold_price_total || '';
     document.getElementById('ep-amenities').value = p.amenities || '';
     openModal('edit-project-modal');
@@ -187,8 +195,11 @@ function setupEditProjectModal() {
       status: document.getElementById('ep-status').value,
       total_budget: parseFloat(document.getElementById('ep-budget').value) || 0,
       description: document.getElementById('ep-description').value.trim(),
+      owner_phone: document.getElementById('ep-owner-phone').value.trim(),
       price_per_sqft: parseFloat(document.getElementById('ep-price-sqft').value) || null,
       total_area_sqft: parseFloat(document.getElementById('ep-total-area').value) || null,
+      extra_cost: parseFloat(document.getElementById('ep-extra-cost').value) || 0,
+      extra_cost_notes: document.getElementById('ep-extra-cost-notes').value.trim(),
       sold_price_total: parseFloat(document.getElementById('ep-sold-price').value) || null,
       amenities: document.getElementById('ep-amenities').value.trim(),
     };
