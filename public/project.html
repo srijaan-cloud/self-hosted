@@ -222,6 +222,12 @@
   <div id="edit-project-modal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-header"><h2>Edit Project</h2><button class="icon-btn modal-close" data-modal="edit-project-modal">✕</button></div>
+      <label class="field-label">Project Display Photo</label>
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <img id="ep-cover-preview" src="" alt="" class="hidden" style="width:72px; height:72px; object-fit:cover; border-radius:8px;" />
+        <input id="ep-cover-file" type="file" accept="image/*" />
+      </div>
+      <p id="ep-cover-status" class="auth-sub hidden"></p>
       <div class="form-grid">
         <div class="full"><label class="field-label">Project Name</label><input id="ep-name" type="text" /></div>
         <div><label class="field-label">Client Name</label><input id="ep-client" type="text" /></div>
