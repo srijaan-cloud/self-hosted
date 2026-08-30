@@ -88,6 +88,7 @@ const PUBLIC_API_PATHS = new Set([
   '/api/auth/pending-verification/resend',
   '/api/auth/verify-first-login',
   '/api/settings/background-image',
+  '/api/settings/logo-image',
 ]);
 
 app.use('/api/*', async (c, next) => {
@@ -261,6 +262,20 @@ app.post('/api/settings/background', requireDirector, async (c) => {
   return c.json({ ok: true });
 });
 
+app.get('/api/settings/logo-image', async (c) => {
+  const img = await auth.getSiteLogo(c.env);
+  if (!img) return c.text('Not set', 404);
+  return new Response(img.bytes, { headers: { 'Content-Type': img.contentType, 'Cache-Control': 'public, max-age=300' } });
+});
+
+app.post('/api/settings/logo', requireDirector, async (c) => {
+  const form = await c.req.formData();
+  const file = form.get('file');
+  if (!file || typeof file === 'string') return c.json({ error: 'file is required' }, 400);
+  await auth.setSiteLogo(c.env, await file.arrayBuffer(), file.type || 'image/png');
+  return c.json({ ok: true });
+});
+
 // ---------- Generic CRUD factory ----------
 
 // internalOnly (default true): every resource below is cost/financial data —
@@ -390,7 +405,7 @@ app.get('/api/projects/:id', async (c) => {
 const PROJECT_FIELDS = [
   'name', 'client_name', 'site_address', 'city', 'start_date', 'expected_end_date',
   'actual_end_date', 'status', 'total_budget', 'description',
-  'price_per_sqft', 'total_area_sqft', 'sold_price_total', 'amenities',
+  'price_per_sqft', 'total_area_sqft', 'sold_price_total', 'amenities', 'cover_media_id',
 ];
 
 app.post('/api/projects', requireDirector, async (c) => {
@@ -626,23 +641,55 @@ const PUBLIC_PROJECT_FIELDS = [
   'sold_price_total', 'amenities',
 ];
 
-function toPublicProject(row) {
+function toPublicProject(row, coverImageKey) {
   const out = {};
   PUBLIC_PROJECT_FIELDS.forEach((f) => (out[f] = row[f]));
+  out.cover_image_key = coverImageKey || null;
   return out;
+}
+
+// The admin-picked cover_media_id wins; otherwise fall back to the first
+// uploaded floor plan, so a project isn't coverless just because no one's
+// explicitly chosen a display photo yet.
+async function resolveCoverImages(db, projectIds) {
+  if (projectIds.length === 0) return {};
+  const placeholders = projectIds.map(() => '?').join(',');
+  const explicit = await db
+    .prepare(
+      `SELECT p.id as project_id, m.image_key FROM projects p JOIN project_media m ON m.id = p.cover_media_id WHERE p.id IN (${placeholders})`
+    )
+    .all(...projectIds);
+  const coverMap = {};
+  explicit.forEach((r) => (coverMap[r.project_id] = r.image_key));
+
+  const missing = projectIds.filter((id) => !(id in coverMap));
+  if (missing.length > 0) {
+    const fbPlaceholders = missing.map(() => '?').join(',');
+    const fallback = await db
+      .prepare(
+        `SELECT project_id, image_key FROM project_media WHERE project_id IN (${fbPlaceholders}) AND category = 'floor_plan' ORDER BY project_id, display_order, id`
+      )
+      .all(...missing);
+    fallback.forEach((r) => {
+      if (!(r.project_id in coverMap)) coverMap[r.project_id] = r.image_key;
+    });
+  }
+  return coverMap;
 }
 
 app.get('/api/public/projects', async (c) => {
   const db = getDb(c.env);
   const rows = await db.prepare('SELECT * FROM projects ORDER BY id DESC').all();
-  return c.json(rows.map(toPublicProject));
+  const covers = await resolveCoverImages(db, rows.map((r) => r.id));
+  return c.json(rows.map((r) => toPublicProject(r, covers[r.id])));
 });
 
 app.get('/api/public/projects/:id', async (c) => {
   const db = getDb(c.env);
   const row = await db.prepare('SELECT * FROM projects WHERE id = ?').get(c.req.param('id'));
   if (!row) return c.json({ error: 'not_found' }, 404);
-  return c.json(toPublicProject(row));
+  const covers = await resolveCoverImages(db, [row.id]);
+  return c.json(toPublicProject(row, covers[row.id]));
 });
 
 app.get('/api/projects/:id/media', async (c) => {
@@ -698,6 +745,20 @@ app.delete('/api/projects/:id/reviews/:reviewId', async (c) => {
   if (!(await canWriteProject(c, c.req.param('id')))) return c.json({ error: 'forbidden' }, 403);
   const db = getDb(c.env);
   await db.prepare('DELETE FROM project_reviews WHERE id = ? AND project_id = ?').run(c.req.param('reviewId'), c.req.param('id'));
+  return c.json({ ok: true });
+});
+
+// Picking which photo represents a project is content management, same
+// privilege level as uploading media — not a core business-field edit like
+// budget/status, so it doesn't need requireDirector like the rest of the
+// project record does.
+app.post('/api/projects/:id/cover', async (c) => {
+  if (!(await canWriteProject(c, c.req.param('id')))) return c.json({ error: 'forbidden' }, 403);
+  const { media_id } = await c.req.json();
+  const db = getDb(c.env);
+  const media = await db.prepare('SELECT id FROM project_media WHERE id = ? AND project_id = ?').get(media_id, c.req.param('id'));
+  if (!media) return c.json({ error: 'not_found' }, 404);
+  await db.prepare('UPDATE projects SET cover_media_id = ? WHERE id = ?').run(media_id, c.req.param('id'));
   return c.json({ ok: true });
 });
 

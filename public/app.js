@@ -23,6 +23,7 @@ async function boot() {
   setupStaffModal();
   setupMaterialTypeModal();
   setupBackgroundUpload();
+  setupLogoUpload();
   document.getElementById('export-csv-btn').addEventListener('click', exportReportsCsv);
   await loadDashboard();
 }
@@ -82,17 +83,9 @@ async function loadPublicShowcase() {
     grid.innerHTML = '<p class="empty-state">No projects published yet.</p>';
     return;
   }
-  const covers = {};
-  await Promise.all(
-    projects.map(async (p) => {
-      const media = await api(`/api/projects/${p.id}/media?category=floor_plan`);
-      covers[p.id] = media[0] || null;
-    })
-  );
   grid.innerHTML = projects
     .map((p) => {
-      const cover = covers[p.id];
-      const img = cover ? `background-image:url('/uploads/${cover.image_key}')` : '';
+      const img = p.cover_image_key ? `background-image:url('/uploads/${p.cover_image_key}')` : '';
       const priceLine =
         p.status === 'completed' && p.sold_price_total
           ? `Sold: ${formatCurrency(p.sold_price_total)}`
@@ -101,7 +94,7 @@ async function loadPublicShowcase() {
           : '';
       return `
         <a class="showcase-card" href="project.html?id=${p.id}">
-          <div class="sc-image" style="${img}">${cover ? '' : '🏗️'}</div>
+          <div class="sc-image" style="${img}"></div>
           <div class="sc-body">
             <div class="sc-name">${p.name}</div>
             <div class="sc-meta">${p.city || ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span></div>
@@ -435,6 +428,32 @@ function setupBackgroundUpload() {
       statusEl.textContent = 'Background updated.';
       document.querySelectorAll('.bg-layer').forEach((el) => {
         el.style.backgroundImage = `url('/api/settings/background-image?t=${Date.now()}')`;
+      });
+    } catch (e) {
+      statusEl.textContent = e.message;
+    }
+  });
+}
+
+function setupLogoUpload() {
+  const input = document.getElementById('logo-file-input');
+  if (!input) return;
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('logo-upload-status');
+    statusEl.textContent = 'Uploading…';
+    statusEl.classList.remove('hidden');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/settings/logo', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      statusEl.textContent = 'Logo updated.';
+      document.querySelectorAll('#site-logo').forEach((el) => {
+        el.src = `/api/settings/logo-image?t=${Date.now()}`;
+        el.classList.remove('hidden');
       });
     } catch (e) {
       statusEl.textContent = e.message;

@@ -187,11 +187,11 @@ export async function verifyOtp(env, email, code) {
   return true;
 }
 
-// ---------- Background image (admin-configurable, stored in KV) ----------
+// ---------- Site images (admin-configurable, stored in KV) ----------
+// Covers both the background watermark and the site logo — same shape, just a
+// different KV key.
 
-const BACKGROUND_KEY = 'config:background';
-
-export async function setBackgroundImage(env, bytes, contentType) {
+async function setImage(env, key, bytes, contentType) {
   // String.fromCharCode(...bytes) blows the call stack for anything beyond a few
   // tens of KB (spreads the whole array as individual arguments) — build the
   // binary string in chunks instead.
@@ -202,11 +202,11 @@ export async function setBackgroundImage(env, bytes, contentType) {
     binary += String.fromCharCode(...arr.subarray(i, i + CHUNK));
   }
   const b64 = btoa(binary);
-  await env.KV.put(BACKGROUND_KEY, JSON.stringify({ data: b64, contentType }));
+  await env.KV.put(key, JSON.stringify({ data: b64, contentType }));
 }
 
-export async function getBackgroundImage(env) {
-  const raw = await env.KV.get(BACKGROUND_KEY);
+async function getImage(env, key) {
+  const raw = await env.KV.get(key);
   if (!raw) return null;
   const { data, contentType } = JSON.parse(raw);
   const binary = atob(data);
@@ -214,3 +214,11 @@ export async function getBackgroundImage(env) {
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return { bytes, contentType };
 }
+
+const BACKGROUND_KEY = 'config:background';
+const LOGO_KEY = 'config:logo';
+
+export const setBackgroundImage = (env, bytes, contentType) => setImage(env, BACKGROUND_KEY, bytes, contentType);
+export const getBackgroundImage = (env) => getImage(env, BACKGROUND_KEY);
+export const setSiteLogo = (env, bytes, contentType) => setImage(env, LOGO_KEY, bytes, contentType);
+export const getSiteLogo = (env) => getImage(env, LOGO_KEY);

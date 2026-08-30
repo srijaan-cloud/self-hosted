@@ -12,7 +12,7 @@
 <body>
   <div class="bg-layer"></div>
   <header class="app-header">
-    <div class="brand"><span class="logo">🏗️</span> Tapasya Constructions</div>
+    <div class="brand"><img id="site-logo" class="site-logo hidden" src="/api/settings/logo-image" alt="" onload="this.classList.remove('hidden')" onerror="this.remove()" /> Tapasya Constructions</div>
     <nav class="app-nav">
       <a href="#" data-view="dashboard" class="active">Dashboard</a>
       <a href="#" data-view="vendors" id="nav-vendors">Vendors</a>
@@ -78,6 +78,13 @@
 
     <!-- ===== SETTINGS VIEW (director only) ===== -->
     <section id="view-settings" class="view hidden">
+      <div class="section-card">
+        <h2>Site Logo</h2>
+        <p class="auth-sub" style="margin:0 0 10px;">Shown in the header on every page, replacing the wordmark-only look.</p>
+        <input id="logo-file-input" type="file" accept="image/*" />
+        <p id="logo-upload-status" class="auth-sub hidden"></p>
+      </div>
+
       <div class="section-card">
         <h2>Background Image</h2>
         <p class="auth-sub" style="margin:0 0 10px;">Shown very faintly behind every page. Applies site-wide immediately.</p>

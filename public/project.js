@@ -37,6 +37,7 @@ async function boot() {
   } else {
     document.getElementById('new-review-btn').classList.remove('hidden');
     document.getElementById('floor-plan-upload-wrap').classList.remove('hidden');
+    document.getElementById('gallery-upload-wrap').classList.remove('hidden');
     document.getElementById('progress-upload-wrap').classList.remove('hidden');
   }
   // Pricing is a core project field (PATCH /api/projects/:id), same director-only
@@ -646,11 +647,13 @@ async function loadShowcase() {
   document.getElementById('progress-section').classList.toggle('hidden', isCompleted());
   document.getElementById('reviews-section').classList.toggle('hidden', !isCompleted());
 
-  const [floorPlans, progress] = await Promise.all([
+  const [floorPlans, gallery, progress] = await Promise.all([
     api(`/api/projects/${state.projectId}/media?category=floor_plan`),
+    api(`/api/projects/${state.projectId}/media?category=gallery`),
     api(`/api/projects/${state.projectId}/media?category=progress`),
   ]);
   renderMediaGallery('floor-plans-gallery', floorPlans);
+  renderMediaGallery('gallery-photos-gallery', gallery);
   renderMediaGallery('progress-gallery', progress);
 
   if (isCompleted()) {
@@ -686,14 +689,23 @@ function renderMediaGallery(containerId, items) {
     el.innerHTML = '<p class="empty-state">None uploaded yet.</p>';
     return;
   }
+  const coverId = state.project.cover_media_id;
   el.innerHTML = items
-    .map(
-      (m) => `<div class="media-item">
-        <img src="/uploads/${m.image_key}" alt="${m.title || ''}" />
+    .map((m) => {
+      const isCover = coverId && Number(coverId) === m.id;
+      return `<div class="media-item">
+        <img src="/uploads/${m.image_key}" alt="${m.title || ''}" style="${isCover ? `outline:3px solid var(--accent); outline-offset:-3px;` : ''}" />
         ${state.canWrite ? `<button class="media-remove remove-media" data-id="${m.id}">✕</button>` : ''}
+        ${
+          state.canWrite
+            ? isCover
+              ? `<div class="media-caption" style="color:var(--accent); font-weight:600;">★ Display Photo</div>`
+              : `<button class="btn btn-small btn-secondary set-cover" data-id="${m.id}" style="margin-top:6px;">Set as Display Photo</button>`
+            : ''
+        }
         ${m.caption ? `<div class="media-caption">${m.caption}</div>` : ''}
-      </div>`
-    )
+      </div>`;
+    })
     .join('');
   el.querySelectorAll('.remove-media').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -702,6 +714,15 @@ function renderMediaGallery(containerId, items) {
       await loadShowcase();
     });
   });
+  el.querySelectorAll('.set-cover').forEach((btn) => {
+    btn.addEventListener('click', () => setCoverPhoto(Number(btn.dataset.id)));
+  });
+}
+
+async function setCoverPhoto(mediaId) {
+  await api(`/api/projects/${state.projectId}/cover`, { method: 'POST', body: JSON.stringify({ media_id: mediaId }) });
+  state.project = await api(`/api/projects/${state.projectId}`);
+  await loadShowcase();
 }
 
 function renderReviews(reviews) {
@@ -753,6 +774,8 @@ async function uploadMedia(fileInput, category) {
 function setupShowcaseTab() {
   const floorPlanInput = document.getElementById('floor-plan-file');
   if (floorPlanInput) floorPlanInput.addEventListener('change', () => uploadMedia(floorPlanInput, 'floor_plan'));
+  const galleryInput = document.getElementById('gallery-file');
+  if (galleryInput) galleryInput.addEventListener('change', () => uploadMedia(galleryInput, 'gallery'));
   const progressInput = document.getElementById('progress-file');
   if (progressInput) progressInput.addEventListener('change', () => uploadMedia(progressInput, 'progress'));
 

@@ -12,7 +12,7 @@
 <body>
   <div class="bg-layer"></div>
   <header class="app-header">
-    <div class="brand"><a href="/" style="text-decoration:none; color:inherit;">🏗️ Tapasya Constructions</a></div>
+    <div class="brand"><a href="/" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:10px;"><img id="site-logo" class="site-logo hidden" src="/api/settings/logo-image" alt="" onload="this.classList.remove('hidden')" onerror="this.remove()" /> Tapasya Constructions</a></div>
     <nav class="app-nav"><a href="/">← All Projects</a></nav>
     <div class="header-actions">
       <span id="role-badge" class="role-badge"></span>
@@ -174,6 +174,15 @@
           <div id="floor-plan-upload-wrap" class="hidden"><input id="floor-plan-file" type="file" accept="image/*" /></div>
         </div>
         <div id="floor-plans-gallery" class="media-gallery"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Project Photos</h2>
+          <div id="gallery-upload-wrap" class="hidden"><input id="gallery-file" type="file" accept="image/*" /></div>
+        </div>
+        <p class="auth-sub" style="margin:0 0 10px;">General photos — site views, exteriors, common areas. Click a photo to make it the cover shown on the project card.</p>
+        <div id="gallery-photos-gallery" class="media-gallery"></div>
       </div>
 
       <div class="section-card" id="progress-section">
