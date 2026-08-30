@@ -124,6 +124,14 @@
     <div class="modal-card">
       <div class="modal-header"><h2 id="project-modal-title">New Project</h2><button class="icon-btn modal-close" data-modal="project-modal">✕</button></div>
       <input type="hidden" id="pm-id" />
+      <div id="pm-cover-wrap" class="hidden">
+        <label class="field-label">Project Display Photo</label>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <img id="pm-cover-preview" src="" alt="" class="hidden" style="width:72px; height:72px; object-fit:cover; border-radius:8px;" />
+          <input id="pm-cover-file" type="file" accept="image/*" />
+        </div>
+        <p id="pm-cover-status" class="auth-sub hidden"></p>
+      </div>
       <label class="field-label">Project Name</label>
       <input id="pm-name" type="text" />
       <div class="form-grid">

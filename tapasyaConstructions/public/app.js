@@ -184,7 +184,30 @@ function setupProjectModal() {
     ].forEach((id) => (document.getElementById(id).value = ''));
     document.getElementById('pm-status').value = 'planning';
     document.getElementById('project-modal-error').classList.add('hidden');
+    document.getElementById('pm-cover-wrap').classList.add('hidden');
     openModal('project-modal');
+  });
+
+  document.getElementById('pm-cover-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const projectId = document.getElementById('pm-id').value;
+    if (!file || !projectId) return;
+    const statusEl = document.getElementById('pm-cover-status');
+    statusEl.textContent = 'Uploading…';
+    statusEl.classList.remove('hidden');
+    try {
+      const key = await uploadFile(file);
+      const media = await api(`/api/projects/${projectId}/media`, {
+        method: 'POST',
+        body: JSON.stringify({ category: 'gallery', image_key: key }),
+      });
+      await api(`/api/projects/${projectId}/cover`, { method: 'POST', body: JSON.stringify({ media_id: media.id }) });
+      document.getElementById('pm-cover-preview').src = `/uploads/${key}`;
+      document.getElementById('pm-cover-preview').classList.remove('hidden');
+      statusEl.textContent = 'Display photo updated.';
+    } catch (err) {
+      statusEl.textContent = err.message;
+    }
   });
 
   document.getElementById('pm-save').addEventListener('click', async () => {
@@ -232,6 +255,16 @@ function setupProjectModal() {
 function openEditProjectModal(p) {
   document.getElementById('project-modal-title').textContent = 'Edit Project';
   document.getElementById('pm-id').value = p.id;
+  document.getElementById('pm-cover-wrap').classList.remove('hidden');
+  document.getElementById('pm-cover-file').value = '';
+  document.getElementById('pm-cover-status').classList.add('hidden');
+  const preview = document.getElementById('pm-cover-preview');
+  if (p.cover_image_key) {
+    preview.src = `/uploads/${p.cover_image_key}`;
+    preview.classList.remove('hidden');
+  } else {
+    preview.classList.add('hidden');
+  }
   document.getElementById('pm-name').value = p.name || '';
   document.getElementById('pm-client').value = p.client_name || '';
   document.getElementById('pm-city').value = p.city || '';

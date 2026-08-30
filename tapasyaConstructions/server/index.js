@@ -454,7 +454,8 @@ app.get('/api/projects/:id', async (c) => {
   const db = getDb(c.env);
   const row = await db.prepare('SELECT * FROM projects WHERE id = ?').get(c.req.param('id'));
   if (!row) return c.json({ error: 'not_found' }, 404);
-  return c.json(row);
+  const covers = await resolveCoverImages(db, [row.id]);
+  return c.json({ ...row, cover_image_key: covers[row.id] || null });
 });
 
 const PROJECT_FIELDS = [
@@ -784,6 +785,8 @@ app.get('/api/dashboard', async (c) => {
   const unlinkedPaymentMap = {};
   unlinkedPaymentRows.forEach((r) => (unlinkedPaymentMap[r.project_id] = r.total));
 
+  const covers = await resolveCoverImages(db, projects.map((p) => p.id));
+
   const projectSummaries = projects.map((p) => {
     const m = materialSpend[p.id] || { total: 0, paid: 0 };
     const l = laborSpend[p.id] || { total: 0, paid: 0 };
@@ -794,6 +797,7 @@ app.get('/api/dashboard', async (c) => {
     const funding = fundingMap[p.id] || 0;
     return {
       ...p,
+      cover_image_key: covers[p.id] || null,
       committed,
       paid,
       balance_due: committed - paid,

@@ -168,8 +168,40 @@ function setupEditProjectModal() {
     el.addEventListener('change', () => autoCalcBudget('ep'));
   });
 
+  document.getElementById('ep-cover-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('ep-cover-status');
+    statusEl.textContent = 'Uploading…';
+    statusEl.classList.remove('hidden');
+    try {
+      const key = await uploadFile(file);
+      const media = await api(`/api/projects/${state.projectId}/media`, {
+        method: 'POST',
+        body: JSON.stringify({ category: 'gallery', image_key: key }),
+      });
+      await api(`/api/projects/${state.projectId}/cover`, { method: 'POST', body: JSON.stringify({ media_id: media.id }) });
+      state.project.cover_media_id = media.id;
+      state.project.cover_image_key = key;
+      document.getElementById('ep-cover-preview').src = `/uploads/${key}`;
+      document.getElementById('ep-cover-preview').classList.remove('hidden');
+      statusEl.textContent = 'Display photo updated.';
+    } catch (err) {
+      statusEl.textContent = err.message;
+    }
+  });
+
   document.getElementById('edit-project-btn').addEventListener('click', () => {
     const p = state.project;
+    document.getElementById('ep-cover-file').value = '';
+    document.getElementById('ep-cover-status').classList.add('hidden');
+    const preview = document.getElementById('ep-cover-preview');
+    if (p.cover_image_key) {
+      preview.src = `/uploads/${p.cover_image_key}`;
+      preview.classList.remove('hidden');
+    } else {
+      preview.classList.add('hidden');
+    }
     document.getElementById('ep-name').value = p.name || '';
     document.getElementById('ep-client').value = p.client_name || '';
     document.getElementById('ep-city').value = p.city || '';
