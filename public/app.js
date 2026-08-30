@@ -74,7 +74,6 @@ async function loadPublicShowcase() {
       </p>
     </div>
   `;
-  document.querySelector('#view-dashboard .section-card').classList.add('hidden');
 
   const grid = document.getElementById('project-grid');
   grid.className = 'showcase-grid';
