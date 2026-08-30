@@ -123,6 +123,7 @@ function renderProjectGrid(projects) {
     grid.innerHTML = '<p class="empty-state">No projects yet. Use "New Project" to add one.</p>';
     return;
   }
+  const isDirector = state.me.role === 'director';
   grid.innerHTML = projects
     .map((p) => {
       const pct = Math.min(p.budget_used_pct, 100);
@@ -131,7 +132,15 @@ function renderProjectGrid(projects) {
         <a class="project-card" href="project.html?id=${p.id}">
           <div class="pc-top">
             <span class="pc-name">${p.name}</span>
-            <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              ${
+                isDirector
+                  ? `<button class="icon-btn edit-project-card" data-id="${p.id}" title="Edit project" style="padding:4px 8px; font-size:0.85rem;">✎</button>
+                     <button class="icon-btn delete-project-card" data-id="${p.id}" title="Delete project" style="padding:4px 8px; font-size:0.85rem;">🗑</button>`
+                  : ''
+              }
+              <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span>
+            </div>
           </div>
           <div class="pc-meta">${p.client_name || ''}${p.city ? ' · ' + p.city : ''}</div>
           <div class="progress-bar"><div class="progress-bar-fill ${barClass}" style="width:${pct}%"></div></div>
@@ -147,6 +156,23 @@ function renderProjectGrid(projects) {
       `;
     })
     .join('');
+
+  grid.querySelectorAll('.edit-project-card').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const p = projects.find((x) => x.id === Number(btn.dataset.id));
+      openEditProjectModal(p);
+    });
+  });
+  grid.querySelectorAll('.delete-project-card').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const p = projects.find((x) => x.id === Number(btn.dataset.id));
+      deleteProject(p);
+    });
+  });
 }
 
 function renderActivityFeed(materials, payments) {
@@ -199,7 +225,12 @@ function setupProjectModal() {
       return;
     }
     try {
-      await api('/api/projects', { method: 'POST', body: JSON.stringify(body) });
+      const id = document.getElementById('pm-id').value;
+      if (id) {
+        await api(`/api/projects/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+      } else {
+        await api('/api/projects', { method: 'POST', body: JSON.stringify(body) });
+      }
       closeModal('project-modal');
       await loadDashboard();
     } catch (e) {
@@ -207,6 +238,28 @@ function setupProjectModal() {
       errEl.classList.remove('hidden');
     }
   });
+}
+
+function openEditProjectModal(p) {
+  document.getElementById('project-modal-title').textContent = 'Edit Project';
+  document.getElementById('pm-id').value = p.id;
+  document.getElementById('pm-name').value = p.name || '';
+  document.getElementById('pm-client').value = p.client_name || '';
+  document.getElementById('pm-city').value = p.city || '';
+  document.getElementById('pm-address').value = p.site_address || '';
+  document.getElementById('pm-start').value = p.start_date || '';
+  document.getElementById('pm-end').value = p.expected_end_date || '';
+  document.getElementById('pm-status').value = p.status;
+  document.getElementById('pm-budget').value = p.total_budget;
+  document.getElementById('pm-description').value = p.description || '';
+  document.getElementById('project-modal-error').classList.add('hidden');
+  openModal('project-modal');
+}
+
+async function deleteProject(p) {
+  if (!confirm(`Delete "${p.name}"? This permanently removes the project and everything in it — materials, payments, labor, equipment, funding, photos, reviews. This cannot be undone.`)) return;
+  await api(`/api/projects/${p.id}`, { method: 'DELETE' });
+  await loadDashboard();
 }
 
 // ==================== VENDORS ====================
