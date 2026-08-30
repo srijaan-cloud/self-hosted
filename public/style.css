@@ -75,6 +75,7 @@ h1 { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 600; margin
   margin: 0 0 16px;
 }
 .hero-headline em { font-style: italic; font-weight: 500; color: var(--accent); }
+.hero-tagline { font-style: italic; font-size: 1.05rem; color: var(--accent2); text-align: center; margin: 0 0 16px; }
 
 .btn-editorial {
   display: inline-block;

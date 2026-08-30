@@ -107,6 +107,7 @@ async function loadPublicShowcase() {
     <div class="showcase-hero">
       <div class="eyebrow" style="text-align:center;">Construction &amp; Development</div>
       <h1 class="hero-headline">Master Builders for <em>End-to-End</em> Construction Solutions</h1>
+      <p class="hero-tagline">Complete Construction Management From Concept to Completion</p>
       <p class="auth-sub" style="font-size:0.98rem; max-width:620px; margin-left:auto; margin-right:auto;">
         From site survey and municipal approvals to structural execution and turnkey interior fit-outs — we manage your entire project under one roof.
       </p>
