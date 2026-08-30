@@ -176,9 +176,11 @@ function renderProjectGrid(projects) {
 // ==================== NEW / EDIT PROJECT ====================
 
 function setupProjectModal() {
-  ['pm-price-sqft', 'pm-total-area', 'pm-extra-cost'].forEach((id) =>
-    document.getElementById(id).addEventListener('input', () => autoCalcBudget('pm'))
-  );
+  ['pm-price-sqft', 'pm-total-area', 'pm-extra-cost'].forEach((id) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => autoCalcBudget('pm'));
+    el.addEventListener('change', () => autoCalcBudget('pm'));
+  });
 
   document.getElementById('new-project-btn').addEventListener('click', () => {
     document.getElementById('project-modal-title').textContent = 'New Project';
