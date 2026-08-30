@@ -3,6 +3,7 @@ import * as auth from './auth.js';
 import * as oauth from './oauth.js';
 import { getDb } from './db.js';
 import { sessionMiddleware, destroySession } from './session.js';
+import { parseCsvText, parseXlsxBuffer, fetchGoogleSheetCsv, mapRows, IMPORTABLE_ENTITY_TYPES } from './import.js';
 
 const app = new Hono();
 
@@ -571,6 +572,105 @@ app.delete('/api/payments/:id', async (c) => {
   await db.prepare('DELETE FROM payments WHERE id = ?').run(c.req.param('id'));
   await syncMaterialEntryPaid(db, existing.material_entry_id);
   return c.json({ ok: true });
+});
+
+// ---------- Import (Google Sheet link or uploaded Excel/CSV file) ----------
+// Generic across every project and every tracked entity type — matches columns by
+// header name (see server/import.js) rather than requiring an exact template, so
+// it tolerates whatever sheet a project actually uses.
+
+async function resolveMaterialTypeId(db, name) {
+  const existing = await db.prepare('SELECT * FROM material_types WHERE lower(name) = lower(?)').get(name);
+  if (existing) return existing;
+  const res = await db.prepare('INSERT INTO material_types (name, default_unit) VALUES (?, ?)').run(name, 'units');
+  return { id: res.lastInsertRowid, default_unit: 'units' };
+}
+
+async function resolveVendorId(db, name) {
+  if (!name) return null;
+  const existing = await db.prepare('SELECT id FROM vendors WHERE lower(name) = lower(?)').get(name);
+  if (existing) return existing.id;
+  const res = await db.prepare('INSERT INTO vendors (name) VALUES (?)').run(name);
+  return res.lastInsertRowid;
+}
+
+app.get('/api/import/entity-types', (c) => c.json(IMPORTABLE_ENTITY_TYPES));
+
+app.post('/api/projects/:id/import', async (c) => {
+  const projectId = c.req.param('id');
+  if (!(await canWriteProject(c, projectId))) return c.json({ error: 'forbidden' }, 403);
+  const db = getDb(c.env);
+
+  const form = await c.req.formData();
+  const entityType = form.get('entity_type');
+  const sheetUrl = form.get('sheet_url');
+  const sheetTab = form.get('sheet_tab') || undefined;
+  const file = form.get('file');
+  if (!IMPORTABLE_ENTITY_TYPES.includes(entityType)) return c.json({ error: `entity_type must be one of: ${IMPORTABLE_ENTITY_TYPES.join(', ')}` }, 400);
+
+  let rowsAoA;
+  try {
+    if (file && typeof file !== 'string') {
+      const name = (file.name || '').toLowerCase();
+      const buf = await file.arrayBuffer();
+      rowsAoA = name.endsWith('.csv') ? parseCsvText(new TextDecoder().decode(buf)) : await parseXlsxBuffer(buf);
+    } else if (sheetUrl) {
+      const csv = await fetchGoogleSheetCsv(sheetUrl, sheetTab);
+      rowsAoA = parseCsvText(csv);
+    } else {
+      return c.json({ error: 'Provide either a file upload or a sheet_url' }, 400);
+    }
+  } catch (e) {
+    return c.json({ error: e.message }, 400);
+  }
+
+  let mapped;
+  try {
+    mapped = mapRows(rowsAoA, entityType);
+  } catch (e) {
+    return c.json({ error: e.message }, 400);
+  }
+  if (mapped.matchedFields.length === 0) {
+    return c.json({ error: 'No recognizable columns found in this sheet for that import type', unmatchedHeaders: mapped.unmatchedHeaders }, 400);
+  }
+
+  const createdMaterialTypes = new Set();
+  const createdVendors = new Set();
+  let imported = 0;
+  const warnings = [];
+
+  for (const { rec, warnings: rowWarnings, row } of mapped.records) {
+    if (rowWarnings.length) warnings.push({ row, messages: rowWarnings });
+    const record = { project_id: projectId, ...rec };
+
+    if (entityType === 'material_entries') {
+      const type = await resolveMaterialTypeId(db, rec.material_type);
+      createdMaterialTypes.add(rec.material_type);
+      record.material_type_id = type.id;
+      delete record.material_type;
+      record.unit = rec.unit || type.default_unit;
+      if (rec.vendor) {
+        record.vendor_id = await resolveVendorId(db, rec.vendor);
+        createdVendors.add(rec.vendor);
+      }
+      delete record.vendor;
+    }
+
+    const cols = Object.keys(record);
+    const placeholders = cols.map(() => '?').join(', ');
+    await db.prepare(`INSERT INTO ${mapped.table} (${cols.join(', ')}) VALUES (${placeholders})`).run(...cols.map((f) => record[f]));
+    imported++;
+  }
+
+  return c.json({
+    imported,
+    skipped: mapped.skipped,
+    warnings,
+    matchedFields: mapped.matchedFields,
+    unmatchedHeaders: mapped.unmatchedHeaders,
+    createdMaterialTypes: [...createdMaterialTypes],
+    createdVendors: [...createdVendors],
+  });
 });
 
 // ---------- Dashboard ----------

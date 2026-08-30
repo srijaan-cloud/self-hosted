@@ -35,6 +35,7 @@ async function boot() {
       document.getElementById(id).classList.add('hidden')
     );
   } else {
+    document.querySelectorAll('.import-btn').forEach((btn) => btn.classList.remove('hidden'));
     document.getElementById('new-review-btn').classList.remove('hidden');
     document.getElementById('floor-plan-upload-wrap').classList.remove('hidden');
     document.getElementById('gallery-upload-wrap').classList.remove('hidden');
@@ -52,6 +53,7 @@ async function boot() {
   setupLaborModal();
   setupEquipmentModal();
   setupFundingModal();
+  setupImportModal();
 
   [state.materialTypes, state.vendors] = await Promise.all([api('/api/material-types'), api('/api/vendors')]);
   populateSelect('me-type', state.materialTypes, (t) => t.id, (t) => `${t.name} (${t.default_unit})`);
@@ -922,6 +924,100 @@ function setupReviewModal() {
     await api(`/api/projects/${state.projectId}/reviews`, { method: 'POST', body: JSON.stringify(body) });
     closeModal('review-modal');
     await loadShowcase();
+  });
+}
+
+// ==================== IMPORT (Google Sheet / Excel / CSV) ====================
+// One shared modal reused from every tab's "Import from Sheet / Excel" button —
+// the entity type comes from the button that opened it, so the same backend
+// endpoint and UI work for materials, payments, labor, equipment, or funding.
+
+const IMPORT_RELOADERS = {
+  material_entries: loadMaterials,
+  payments: loadPayments,
+  labor_entries: loadLabor,
+  equipment_entries: loadEquipment,
+  project_funding: loadFunding,
+};
+const IMPORT_ENTITY_LABELS = {
+  material_entries: 'Material Entries',
+  payments: 'Payments',
+  labor_entries: 'Labor Entries',
+  equipment_entries: 'Equipment Entries',
+  project_funding: 'Funding',
+};
+
+function setupImportModal() {
+  let currentEntity = null;
+
+  document.querySelectorAll('.import-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      currentEntity = btn.dataset.entity;
+      document.getElementById('import-modal-title').textContent = `Import ${IMPORT_ENTITY_LABELS[currentEntity]}`;
+      document.getElementById('im-sheet-url').value = '';
+      document.getElementById('im-sheet-tab').value = '';
+      document.getElementById('im-file').value = '';
+      document.getElementById('import-modal-error').classList.add('hidden');
+      document.getElementById('import-result').classList.add('hidden');
+      openModal('import-modal');
+    });
+  });
+
+  document.getElementById('im-run').addEventListener('click', async () => {
+    const errEl = document.getElementById('import-modal-error');
+    const resultEl = document.getElementById('import-result');
+    errEl.classList.add('hidden');
+    resultEl.classList.add('hidden');
+
+    const sheetUrl = document.getElementById('im-sheet-url').value.trim();
+    const sheetTab = document.getElementById('im-sheet-tab').value.trim();
+    const file = document.getElementById('im-file').files[0];
+    if (!sheetUrl && !file) {
+      errEl.textContent = 'Paste a Google Sheet link or choose a file to upload';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    const form = new FormData();
+    form.append('entity_type', currentEntity);
+    if (file) form.append('file', file);
+    else {
+      form.append('sheet_url', sheetUrl);
+      if (sheetTab) form.append('sheet_tab', sheetTab);
+    }
+
+    const runBtn = document.getElementById('im-run');
+    runBtn.disabled = true;
+    runBtn.textContent = 'Importing…';
+    try {
+      const res = await fetch(`/api/projects/${state.projectId}/import`, { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Import failed');
+
+      const parts = [`Imported ${data.imported} row(s).`];
+      if (data.skipped.length) parts.push(`Skipped ${data.skipped.length} row(s) (missing required fields).`);
+      if (data.warnings.length) parts.push(`${data.warnings.length} row(s) had an ambiguous date and were assumed DD/MM.`);
+      if (data.createdMaterialTypes?.length) parts.push(`New material types: ${data.createdMaterialTypes.join(', ')}.`);
+      if (data.createdVendors?.length) parts.push(`New vendors: ${data.createdVendors.join(', ')}.`);
+      resultEl.textContent = parts.join(' ');
+      resultEl.classList.remove('hidden');
+
+      await IMPORT_RELOADERS[currentEntity]();
+      if (currentEntity === 'material_entries') {
+        [state.materialTypes, state.vendors] = await Promise.all([api('/api/material-types'), api('/api/vendors')]);
+        populateSelect('me-type', state.materialTypes, (t) => t.id, (t) => `${t.name} (${t.default_unit})`);
+        populateSelect('mat-filter-type', state.materialTypes, (t) => t.id, (t) => t.name, true, 'All material types');
+        populateSelect('me-vendor', state.vendors, (v) => v.id, (v) => v.name, true, '— None —');
+        populateSelect('mat-filter-vendor', state.vendors, (v) => v.id, (v) => v.name, true, 'All vendors');
+      }
+      await loadProject();
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.classList.remove('hidden');
+    } finally {
+      runBtn.disabled = false;
+      runBtn.textContent = 'Import';
+    }
   });
 }
 
