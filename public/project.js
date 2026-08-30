@@ -110,6 +110,13 @@ function setupTabs() {
 
 // ==================== PUBLIC SHOWCASE VIEW (viewer / guest) ====================
 
+function renderDescriptionAndTimeline(p) {
+  document.getElementById('showcase-description').textContent = p.description || 'No description provided.';
+  document.getElementById('showcase-timeline').innerHTML =
+    `Start: ${formatDate(p.start_date)} &nbsp;·&nbsp; Expected completion: ${formatDate(p.expected_end_date)}` +
+    (p.actual_end_date ? ` &nbsp;·&nbsp; Actual completion: ${formatDate(p.actual_end_date)}` : '');
+}
+
 async function loadPublicProjectView() {
   const p = await api(`/api/public/projects/${state.projectId}`);
   state.project = p;
@@ -118,6 +125,8 @@ async function loadPublicProjectView() {
   document.getElementById('project-meta').innerHTML =
     `${p.client_name || ''}${p.city ? ' · ' + p.city : ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span>`;
   document.getElementById('project-kpi-row').innerHTML = '';
+  document.getElementById('tab-overview').classList.add('hidden');
+  renderDescriptionAndTimeline(p);
 }
 
 // ==================== OVERVIEW ====================
@@ -133,6 +142,7 @@ async function loadProject() {
   document.getElementById('project-timeline').innerHTML =
     `Start: ${formatDate(p.start_date)} &nbsp;·&nbsp; Expected completion: ${formatDate(p.expected_end_date)}` +
     (p.actual_end_date ? ` &nbsp;·&nbsp; Actual completion: ${formatDate(p.actual_end_date)}` : '');
+  renderDescriptionAndTimeline(p);
 
   const dash = await api('/api/dashboard');
   const summary = dash.projects.find((x) => String(x.id) === String(p.id));
