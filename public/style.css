@@ -237,6 +237,14 @@ td.balance-clear { color: var(--green); }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
 .section-header h2 { margin: 0; }
 
+.vendor-card summary { cursor: pointer; list-style: none; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; }
+.vendor-card summary::-webkit-details-marker { display: none; }
+.vendor-card summary::before { content: '▸'; color: var(--ink-soft); transition: transform 0.15s ease; }
+.vendor-card[open] summary::before { transform: rotate(90deg); }
+.vendor-name { font-weight: 700; font-family: var(--font-serif); }
+.vendor-contact { flex: 1 1 auto; margin: 0; }
+.vendor-total { font-weight: 600; color: var(--accent); white-space: nowrap; }
+
 .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
 .filter-row select, .filter-row input { width: auto; margin-bottom: 0; min-width: 140px; }
 

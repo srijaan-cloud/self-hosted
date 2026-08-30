@@ -265,25 +265,54 @@ async function deleteProject(p) {
 // ==================== VENDORS ====================
 
 async function loadVendors() {
-  const vendors = await api('/api/vendors');
-  const tbody = document.getElementById('vendors-tbody');
-  if (vendors.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No vendors yet.</td></tr>';
+  const summary = await api('/api/vendor-payment-summary');
+  const container = document.getElementById('vendors-list');
+  if (summary.length === 0) {
+    container.innerHTML = '<p class="empty-state">No vendors or payments recorded yet.</p>';
     return;
   }
   const canWrite = canWriteRole(state.me.role);
-  tbody.innerHTML = vendors
-    .map(
-      (v) => `<tr>
-        <td>${v.name}</td><td>${v.contact_person || '—'}</td><td>${v.phone || '—'}</td>
-        <td>${v.email || '—'}</td><td>${v.gst_number || '—'}</td>
-        <td>${canWrite ? `<button class="btn btn-small btn-danger delete-vendor" data-id="${v.id}">Delete</button>` : ''}</td>
-      </tr>`
-    )
+  container.innerHTML = summary
+    .map((v) => {
+      const contactBits = v.vendor
+        ? [v.vendor.contact_person, v.vendor.phone, v.vendor.email, v.vendor.gst_number ? `GST ${v.vendor.gst_number}` : null]
+            .filter(Boolean)
+            .join(' · ')
+        : '';
+      const rows = v.payments
+        .map(
+          (p) => `<tr>
+            <td>${formatDate(p.date)}</td><td>${p.project_name}</td><td class="num">${formatCurrency(p.amount)}</td>
+            <td><span class="mode-pill">${paymentModeLabel(p.payment_mode)}</span></td>
+            <td>${p.paid_to_account || '—'}</td><td>${p.transaction_id || '—'}</td><td>${p.remarks || '—'}</td>
+          </tr>`
+        )
+        .join('');
+      return `
+        <details class="section-card vendor-card">
+          <summary>
+            <span class="vendor-name">${v.name}</span>
+            ${contactBits ? `<span class="auth-sub vendor-contact">${contactBits}</span>` : ''}
+            <span class="vendor-total">${formatCurrency(v.total)}${v.payments.length ? ` · ${v.payments.length} payment(s)` : ''}</span>
+            ${canWrite && v.vendor ? `<button class="btn btn-small btn-danger delete-vendor" data-id="${v.vendor.id}">Delete</button>` : ''}
+          </summary>
+          ${
+            v.payments.length
+              ? `<div class="table-wrap" style="margin-top:12px;">
+                  <table>
+                    <thead><tr><th>Date</th><th>Project</th><th class="num">Amount</th><th>Mode</th><th>Account</th><th>Reference</th><th>Remarks</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                </div>`
+              : '<p class="auth-sub" style="margin-top:10px;">No payments recorded yet.</p>'
+          }
+        </details>`;
+    })
     .join('');
-  tbody.querySelectorAll('.delete-vendor').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('Delete this vendor?')) return;
+  container.querySelectorAll('.delete-vendor').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!confirm('Delete this vendor record? (Their payment history stays intact.)')) return;
       await api(`/api/vendors/${btn.dataset.id}`, { method: 'DELETE' });
       await loadVendors();
     });

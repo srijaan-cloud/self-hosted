@@ -380,6 +380,60 @@ crudRoutes({
   projectScoped: false,
 });
 
+// Vendors master list is a separate, manually-managed table (contact/GST/etc.),
+// but real spend data lives in `payments.paid_to` as free text — most vendors
+// never get a formal record created for them. This rolls payments up by
+// recipient name so the Vendors page shows who was actually paid, when, for
+// which project, and through which account, whether or not a vendor record
+// exists for them.
+app.get('/api/vendor-payment-summary', async (c) => {
+  if (c.get('session').role === 'viewer') return c.json({ error: 'forbidden' }, 403);
+  const db = getDb(c.env);
+  const ids = await accessibleProjectIds(c);
+
+  let sql = `
+    SELECT p.id, p.date, p.amount, p.payment_mode, p.transaction_id, p.paid_to,
+           p.paid_to_account, p.category, p.remarks, p.project_id, pr.name as project_name
+    FROM payments p JOIN projects pr ON pr.id = p.project_id
+  `;
+  const params = [];
+  if (ids !== 'all') {
+    if (ids.length === 0) return c.json([]);
+    sql += ` WHERE p.project_id IN (${ids.map(() => '?').join(',')})`;
+    params.push(...ids);
+  }
+  sql += ' ORDER BY p.date DESC, p.id DESC';
+  const rows = await db.prepare(sql).all(...params);
+
+  const vendorRecords = await db.prepare('SELECT * FROM vendors').all();
+  const vendorByName = {};
+  vendorRecords.forEach((v) => (vendorByName[v.name.trim().toLowerCase()] = v));
+
+  const groups = {};
+  const order = [];
+  for (const r of rows) {
+    const name = (r.paid_to || '').trim() || 'Unknown';
+    const key = name.toLowerCase();
+    if (!groups[key]) {
+      groups[key] = { name, vendor: vendorByName[key] || null, total: 0, payments: [] };
+      order.push(key);
+    }
+    groups[key].total += r.amount;
+    groups[key].payments.push(r);
+  }
+  // Vendor records with no payments yet (e.g. added ahead of time) still show up.
+  vendorRecords.forEach((v) => {
+    const key = v.name.trim().toLowerCase();
+    if (!groups[key]) {
+      groups[key] = { name: v.name, vendor: v, total: 0, payments: [] };
+      order.push(key);
+    }
+  });
+
+  const result = order.map((k) => groups[k]).sort((a, b) => b.total - a.total);
+  return c.json(result);
+});
+
 // ---------- Projects ----------
 
 app.get('/api/projects', async (c) => {
@@ -499,7 +553,8 @@ async function syncMaterialEntryPaid(db, materialEntryId) {
 
 const PAYMENT_FIELDS = [
   'project_id', 'material_entry_id', 'category', 'date', 'amount', 'payment_mode',
-  'transaction_id', 'cheque_number', 'bank_name', 'paid_to', 'paid_by', 'receipt_attachment_key', 'remarks',
+  'transaction_id', 'cheque_number', 'bank_name', 'paid_to', 'paid_to_account', 'paid_by',
+  'receipt_attachment_key', 'remarks',
 ];
 
 app.get('/api/payments', async (c) => {

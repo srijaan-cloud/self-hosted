@@ -393,6 +393,7 @@ function openPaymentModal(payment) {
   document.getElementById('pay-cheque-number').value = payment ? payment.cheque_number || '' : '';
   document.getElementById('pay-bank-name').value = payment ? payment.bank_name || '' : '';
   document.getElementById('pay-paid-to').value = payment ? payment.paid_to || '' : '';
+  document.getElementById('pay-paid-to-account').value = payment ? payment.paid_to_account || '' : '';
   document.getElementById('pay-paid-by').value = payment ? payment.paid_by || '' : '';
   document.getElementById('pay-remarks').value = payment ? payment.remarks || '' : '';
   document.getElementById('pay-material-entry').value = payment && payment.material_entry_id ? payment.material_entry_id : '';
@@ -442,6 +443,7 @@ function setupPaymentModal() {
       cheque_number: document.getElementById('pay-cheque-number').value.trim(),
       bank_name: document.getElementById('pay-bank-name').value.trim(),
       paid_to: document.getElementById('pay-paid-to').value.trim(),
+      paid_to_account: document.getElementById('pay-paid-to-account').value.trim(),
       paid_by: document.getElementById('pay-paid-by').value.trim(),
       remarks: document.getElementById('pay-remarks').value.trim(),
     };
