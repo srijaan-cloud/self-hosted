@@ -160,9 +160,11 @@ async function loadProject() {
 }
 
 function setupEditProjectModal() {
-  ['ep-price-sqft', 'ep-total-area', 'ep-extra-cost'].forEach((id) =>
-    document.getElementById(id).addEventListener('input', () => autoCalcBudget('ep'))
-  );
+  ['ep-price-sqft', 'ep-total-area', 'ep-extra-cost'].forEach((id) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => autoCalcBudget('ep'));
+    el.addEventListener('change', () => autoCalcBudget('ep'));
+  });
 
   document.getElementById('edit-project-btn').addEventListener('click', () => {
     const p = state.project;
