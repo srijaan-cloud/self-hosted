@@ -5,6 +5,53 @@ async function api(url, opts = {}) {
   return data;
 }
 
+const MAX_UPLOAD_BYTES = 1024 * 1024;
+
+// Downscales + re-encodes an image as JPEG, stepping down quality (and, if
+// still too big, dimensions) until it's under the 1MB server cap. Non-images
+// (PDFs, etc.) are returned as-is — the server will reject them if they're
+// still too large, since there's no easy way to compress those in-browser.
+async function compressImageIfNeeded(file, maxBytes = MAX_UPLOAD_BYTES) {
+  if (!file.type.startsWith('image/') || file.size <= maxBytes) return file;
+
+  const bitmap = await createImageBitmap(file);
+  let { width, height } = bitmap;
+  const maxDim = 1920;
+  if (width > maxDim || height > maxDim) {
+    const scale = maxDim / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+    const quality = Math.max(0.9 - attempt * 0.15, 0.15);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+    if (blob && (blob.size <= maxBytes || attempt === 5)) {
+      const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+      return new File([blob], name, { type: 'image/jpeg' });
+    }
+    width = Math.round(width * 0.75);
+    height = Math.round(height * 0.75);
+  }
+  return file;
+}
+
+// Shared upload path for every photo/document input in the app — compresses
+// images client-side first, then posts to /api/uploads. Returns the R2 key.
+async function uploadFile(file) {
+  const compressed = await compressImageIfNeeded(file);
+  const form = new FormData();
+  form.append('file', compressed);
+  const res = await fetch('/api/uploads', { method: 'POST', body: form });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Upload failed');
+  return data.key;
+}
+
 function formatCurrency(n) {
   n = Number(n) || 0;
   return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });

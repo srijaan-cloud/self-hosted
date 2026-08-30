@@ -38,10 +38,7 @@ database_id = "bb3c356b-cfb8-4f29-8c53-49896d8b87f7"
 binding = "KV"
 id = "60885e0d32e64732aa1fa9287872f709"
 
-# Bill/receipt/site-photo uploads. R2 isn't enabled on this Cloudflare account yet —
-# enable it at dash.cloudflare.com -> R2, then run:
-#   npx wrangler r2 bucket create tapasya-constructions-uploads
-# and uncomment this block.
-# [[r2_buckets]]
-# binding = "UPLOADS"
-# bucket_name = "tapasya-constructions-uploads"
+# Bill/receipt/site-photo uploads.
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "tapasya-constructions-uploads"
