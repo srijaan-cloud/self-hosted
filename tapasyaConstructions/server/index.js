@@ -705,12 +705,27 @@ app.get('/api/dashboard', async (c) => {
   const fundingMap = {};
   fundingRows.forEach((r) => (fundingMap[r.project_id] = r.total));
 
+  // Payments not linked to a material entry (material_entry_id IS NULL) — e.g.
+  // imported bank-transaction records, or labor/equipment/misc payments logged
+  // directly — have no separate "committed" line item of their own. Recording
+  // the payment IS the commitment, so it counts as both committed and paid;
+  // otherwise they'd be invisible to these totals even though real money moved.
+  // (Payments linked to a material entry already flow into that entry's own
+  // amount_paid via syncMaterialEntryPaid, so they're excluded here to avoid
+  // double-counting.)
+  const unlinkedPaymentRows = await db
+    .prepare('SELECT project_id, COALESCE(SUM(amount),0) as total FROM payments WHERE material_entry_id IS NULL GROUP BY project_id')
+    .all();
+  const unlinkedPaymentMap = {};
+  unlinkedPaymentRows.forEach((r) => (unlinkedPaymentMap[r.project_id] = r.total));
+
   const projectSummaries = projects.map((p) => {
     const m = materialSpend[p.id] || { total: 0, paid: 0 };
     const l = laborSpend[p.id] || { total: 0, paid: 0 };
     const e = equipmentSpend[p.id] || { total: 0, paid: 0 };
-    const committed = m.total + l.total + e.total;
-    const paid = m.paid + l.paid + e.paid;
+    const directPayments = unlinkedPaymentMap[p.id] || 0;
+    const committed = m.total + l.total + e.total + directPayments;
+    const paid = m.paid + l.paid + e.paid + directPayments;
     const funding = fundingMap[p.id] || 0;
     return {
       ...p,
