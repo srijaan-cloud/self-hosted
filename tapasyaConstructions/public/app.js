@@ -27,6 +27,8 @@ async function boot() {
     document.getElementById('nav-vendors').classList.add('hidden');
     document.getElementById('nav-reports').classList.add('hidden');
     document.getElementById('new-project-btn').classList.add('hidden');
+    document.getElementById('staff-nav').classList.add('hidden');
+    document.getElementById('guest-nav').classList.remove('hidden');
   }
   setupNav();
   setupProjectModal();
@@ -35,6 +37,7 @@ async function boot() {
   setupMaterialTypeModal();
   setupBackgroundUpload();
   setupLogoUpload();
+  setupContactForm();
   document.getElementById('export-csv-btn').addEventListener('click', exportReportsCsv);
   await loadDashboard();
 }
@@ -73,6 +76,10 @@ async function loadDashboard() {
 // No cost/payment data — just the project portfolio, marketing-style.
 
 async function loadPublicShowcase() {
+  document.getElementById('service-section').classList.remove('hidden');
+  document.getElementById('contact-section').classList.remove('hidden');
+  document.getElementById('projects-heading').textContent = 'Our Portfolio';
+
   const projects = await api('/api/public/projects');
   const kpiRow = document.getElementById('kpi-row');
   kpiRow.style.display = 'block';
@@ -175,6 +182,42 @@ function renderProjectGrid(projects) {
       const p = projects.find((x) => x.id === Number(btn.dataset.id));
       deleteProject(p);
     });
+  });
+}
+
+function setupContactForm() {
+  const btn = document.getElementById('cf-submit');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const errEl = document.getElementById('contact-form-error');
+    const successEl = document.getElementById('contact-form-success');
+    errEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+    const body = {
+      name: document.getElementById('cf-name').value.trim(),
+      phone: document.getElementById('cf-phone').value.trim(),
+      email: document.getElementById('cf-email').value.trim(),
+      message: document.getElementById('cf-message').value.trim(),
+    };
+    if (!body.phone || !body.email || !body.message) {
+      errEl.textContent = 'Phone number, email address, and message are required';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      await api('/api/contact', { method: 'POST', body: JSON.stringify(body) });
+      successEl.textContent = "Thanks — we've received your message and will get back to you soon.";
+      successEl.classList.remove('hidden');
+      ['cf-name', 'cf-phone', 'cf-email', 'cf-message'].forEach((id) => (document.getElementById(id).value = ''));
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+    }
   });
 }
 

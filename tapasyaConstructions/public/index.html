@@ -13,11 +13,17 @@
   <div class="bg-layer"></div>
   <header class="app-header">
     <div class="brand"><img id="site-logo" class="site-logo hidden" src="/api/settings/logo-image" alt="" onload="this.classList.remove('hidden')" onerror="this.remove()" /> Tapasya Constructions</div>
-    <nav class="app-nav">
+    <nav class="app-nav" id="staff-nav">
       <a href="#" data-view="dashboard" class="active">Dashboard</a>
       <a href="#" data-view="vendors" id="nav-vendors">Vendors</a>
       <a href="#" data-view="reports" id="nav-reports">Reports</a>
       <a href="#" data-view="settings" id="nav-settings" class="hidden">Settings</a>
+    </nav>
+    <nav class="app-nav hidden" id="guest-nav">
+      <a href="#home-section">Home</a>
+      <a href="#service-section">Service</a>
+      <a href="#portfolio-section">Portfolio</a>
+      <a href="#contact-section">Contact</a>
     </nav>
     <div class="header-actions">
       <a id="guest-preview-btn" class="btn btn-secondary btn-small hidden" href="/?guestpreview=1">View as Guest</a>
@@ -36,13 +42,70 @@
 
     <!-- ===== DASHBOARD VIEW ===== -->
     <section id="view-dashboard" class="view">
-      <div class="kpi-row" id="kpi-row"></div>
-
-      <div class="section-header">
-        <h2>Projects</h2>
-        <button id="new-project-btn" class="btn btn-primary btn-inline hidden">+ New Project</button>
+      <div id="home-section">
+        <div class="kpi-row" id="kpi-row"></div>
       </div>
-      <div class="project-grid" id="project-grid"></div>
+
+      <div id="service-section" class="hidden">
+        <div class="section-header"><h2>Our Services</h2></div>
+        <div class="service-grid">
+          <div class="service-card">
+            <div class="service-icon">🏠</div>
+            <h3>Residential Construction</h3>
+            <p>Homes, villas, and apartment buildings built to last — from foundation to finishing.</p>
+          </div>
+          <div class="service-card">
+            <div class="service-icon">🏛️</div>
+            <h3>Commercial &amp; Function Halls</h3>
+            <p>Large-format venues and commercial spaces designed for both grandeur and everyday function.</p>
+          </div>
+          <div class="service-card">
+            <div class="service-icon">🧱</div>
+            <h3>Material Sourcing &amp; Quality Control</h3>
+            <p>Direct sourcing of steel, cement, RMC, and finishing materials from trusted vendors, tracked end to end.</p>
+          </div>
+          <div class="service-card">
+            <div class="service-icon">📋</div>
+            <h3>Project Management</h3>
+            <p>Transparent scheduling, budgeting, and progress tracking from groundbreaking to handover.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="portfolio-section">
+        <div class="section-header">
+          <h2 id="projects-heading">Projects</h2>
+          <button id="new-project-btn" class="btn btn-primary btn-inline hidden">+ New Project</button>
+        </div>
+        <div class="project-grid" id="project-grid"></div>
+      </div>
+
+      <div id="contact-section" class="hidden">
+        <div class="section-header"><h2>Contact Us</h2></div>
+        <div class="section-card contact-card">
+          <div><span class="contact-label">Phone</span><a href="tel:+919440778115">+91 94407 78115</a></div>
+          <div><span class="contact-label">Email</span><a href="mailto:tapasyaconstructions@gmail.com">tapasyaconstructions@gmail.com</a></div>
+          <div>
+            <span class="contact-label">Office</span>
+            <span>Flat #301, Gayatri Constructions, Jyothi Nagar, Karimnagar</span>
+            <a href="https://maps.app.goo.gl/dTfF1nLYCcMWpbvJ9?g_st=iw" target="_blank" rel="noopener" class="contact-map-link">View on Google Maps →</a>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h2 style="margin-bottom:16px;">Send Us a Message</h2>
+          <div class="form-grid">
+            <div><label class="field-label">Name</label><input id="cf-name" type="text" /></div>
+            <div><label class="field-label">Phone Number *</label><input id="cf-phone" type="text" required /></div>
+            <div class="full"><label class="field-label">Email Address *</label><input id="cf-email" type="email" required /></div>
+          </div>
+          <label class="field-label">Message *</label>
+          <textarea id="cf-message" required></textarea>
+          <p id="contact-form-error" class="auth-error hidden"></p>
+          <p id="contact-form-success" class="auth-success hidden"></p>
+          <button id="cf-submit" class="btn btn-primary" style="margin-top:8px;">Send Message</button>
+        </div>
+      </div>
     </section>
 
     <!-- ===== VENDORS VIEW ===== -->

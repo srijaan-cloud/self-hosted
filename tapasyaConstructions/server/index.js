@@ -100,6 +100,7 @@ const PUBLIC_API_PATHS = new Set([
   '/api/auth/verify-first-login',
   '/api/settings/background-image',
   '/api/settings/logo-image',
+  '/api/contact',
 ]);
 
 app.use('/api/*', async (c, next) => {
@@ -979,6 +980,50 @@ app.get('/uploads/:key', async (c) => {
   if (!obj) return c.text('Not found', 404);
   return new Response(obj.body, { headers: { 'Content-Type': obj.httpMetadata?.contentType || 'application/octet-stream' } });
 });
+
+// ---------- Public contact form ----------
+
+const CONTACT_EMAIL = 'tapasyaconstructions@gmail.com';
+const CONTACT_COOLDOWN_MS = 60 * 1000;
+
+app.post('/api/contact', async (c) => {
+  const { name, phone, email, message } = await c.req.json();
+  if (!phone || !phone.trim()) return c.json({ error: 'Phone number is required' }, 400);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return c.json({ error: 'A valid email address is required' }, 400);
+  if (!message || !message.trim()) return c.json({ error: 'Message is required' }, 400);
+  if (message.length > 5000) return c.json({ error: 'Message is too long' }, 400);
+
+  const cooldownKey = `contact-cooldown:${email.trim().toLowerCase()}`;
+  if (await c.env.KV.get(cooldownKey)) {
+    return c.json({ error: 'Please wait a bit before sending another message' }, 429);
+  }
+  await c.env.KV.put(cooldownKey, '1', { expirationTtl: Math.ceil(CONTACT_COOLDOWN_MS / 1000) });
+
+  if (!c.env.RESEND_API_KEY) return c.json({ error: 'The contact form is not configured yet' }, 503);
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${c.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: c.env.RESEND_FROM_EMAIL || 'Tapasya Constructions <onboarding@resend.dev>',
+      to: [CONTACT_EMAIL],
+      reply_to: email.trim(),
+      subject: `New website enquiry from ${name?.trim() || phone.trim()}`,
+      html: `
+        <p><strong>Name:</strong> ${escapeHtml(name?.trim() || '—')}</p>
+        <p><strong>Phone:</strong> ${escapeHtml(phone.trim())}</p>
+        <p><strong>Email:</strong> ${escapeHtml(email.trim())}</p>
+        <p><strong>Message:</strong></p>
+        <p>${escapeHtml(message.trim()).replace(/\n/g, '<br>')}</p>
+      `,
+    }),
+  });
+  if (!res.ok) return c.json({ error: 'Could not send your message — please try again shortly' }, 502);
+  return c.json({ ok: true });
+});
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
 
 // Everything else (style.css, app.js, login.html, ...) is a public static file.
 app.get('*', (c) => c.env.ASSETS.fetch(c.req.raw));
