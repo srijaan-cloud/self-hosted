@@ -210,6 +210,28 @@ function setupProjectModal() {
     }
   });
 
+  [
+    ['pm-floorplan-file', 'pm-floorplan-status', 'floor_plan'],
+    ['pm-progress-file', 'pm-progress-status', 'progress'],
+  ].forEach(([fileId, statusId, category]) => {
+    document.getElementById(fileId).addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const projectId = document.getElementById('pm-id').value;
+      if (!file || !projectId) return;
+      const statusEl = document.getElementById(statusId);
+      statusEl.textContent = 'Uploading…';
+      statusEl.classList.remove('hidden');
+      try {
+        const key = await uploadFile(file);
+        await api(`/api/projects/${projectId}/media`, { method: 'POST', body: JSON.stringify({ category, image_key: key }) });
+        statusEl.textContent = 'Added.';
+        e.target.value = '';
+      } catch (err) {
+        statusEl.textContent = err.message;
+      }
+    });
+  });
+
   document.getElementById('pm-save').addEventListener('click', async () => {
     const errEl = document.getElementById('project-modal-error');
     errEl.classList.add('hidden');
@@ -258,6 +280,8 @@ function openEditProjectModal(p) {
   document.getElementById('pm-cover-wrap').classList.remove('hidden');
   document.getElementById('pm-cover-file').value = '';
   document.getElementById('pm-cover-status').classList.add('hidden');
+  ['pm-floorplan-file', 'pm-progress-file'].forEach((id) => (document.getElementById(id).value = ''));
+  ['pm-floorplan-status', 'pm-progress-status'].forEach((id) => document.getElementById(id).classList.add('hidden'));
   const preview = document.getElementById('pm-cover-preview');
   if (p.cover_image_key) {
     preview.src = `/uploads/${p.cover_image_key}`;

@@ -191,10 +191,33 @@ function setupEditProjectModal() {
     }
   });
 
+  [
+    ['ep-floorplan-file', 'ep-floorplan-status', 'floor_plan'],
+    ['ep-progress-file', 'ep-progress-status', 'progress'],
+  ].forEach(([fileId, statusId, category]) => {
+    document.getElementById(fileId).addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const statusEl = document.getElementById(statusId);
+      statusEl.textContent = 'Uploading…';
+      statusEl.classList.remove('hidden');
+      try {
+        const key = await uploadFile(file);
+        await api(`/api/projects/${state.projectId}/media`, { method: 'POST', body: JSON.stringify({ category, image_key: key }) });
+        statusEl.textContent = 'Added.';
+        e.target.value = '';
+      } catch (err) {
+        statusEl.textContent = err.message;
+      }
+    });
+  });
+
   document.getElementById('edit-project-btn').addEventListener('click', () => {
     const p = state.project;
     document.getElementById('ep-cover-file').value = '';
     document.getElementById('ep-cover-status').classList.add('hidden');
+    ['ep-floorplan-file', 'ep-progress-file'].forEach((id) => (document.getElementById(id).value = ''));
+    ['ep-floorplan-status', 'ep-progress-status'].forEach((id) => document.getElementById(id).classList.add('hidden'));
     const preview = document.getElementById('ep-cover-preview');
     if (p.cover_image_key) {
       preview.src = `/uploads/${p.cover_image_key}`;
