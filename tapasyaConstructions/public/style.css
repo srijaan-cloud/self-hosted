@@ -166,7 +166,7 @@ label.field-label { display: block; font-size: 0.78rem; color: var(--ink-soft); 
   flex-wrap: wrap;
 }
 .app-header .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-serif); font-weight: 600; font-size: 1.15rem; letter-spacing: 0.02em; }
-.app-header .brand .logo { font-size: 1.4rem; }
+.site-logo { height: 30px; width: auto; display: block; }
 .app-nav { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
 .app-nav a {
   padding: 8px 14px;
