@@ -139,7 +139,7 @@ app.post('/api/auth/login', async (c) => {
 
 app.get('/api/auth/logout', async (c) => {
   destroySession(c);
-  return c.redirect('/login.html');
+  return c.redirect('/');
 });
 
 // First-run bootstrap: create the first director account when none exist yet.
