@@ -57,6 +57,7 @@
       <div class="section-header">
         <h2>Material Entries</h2>
         <button id="new-material-entry-btn" class="btn btn-primary btn-inline">+ Add Material Entry</button>
+        <button class="btn btn-secondary btn-inline import-btn hidden" data-entity="material_entries">⇪ Import from Sheet / Excel</button>
       </div>
       <div class="filter-row">
         <select id="mat-filter-type"><option value="">All material types</option></select>
@@ -81,6 +82,7 @@
       <div class="section-header">
         <h2>Payments</h2>
         <button id="new-payment-btn" class="btn btn-primary btn-inline">+ Add Payment</button>
+        <button class="btn btn-secondary btn-inline import-btn hidden" data-entity="payments">⇪ Import from Sheet / Excel</button>
       </div>
       <div class="filter-row">
         <select id="pay-filter-category">
@@ -111,6 +113,7 @@
       <div class="section-header">
         <h2>Labor</h2>
         <button id="new-labor-btn" class="btn btn-primary btn-inline">+ Add Labor Entry</button>
+        <button class="btn btn-secondary btn-inline import-btn hidden" data-entity="labor_entries">⇪ Import from Sheet / Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -127,6 +130,7 @@
       <div class="section-header">
         <h2>Equipment</h2>
         <button id="new-equipment-btn" class="btn btn-primary btn-inline">+ Add Equipment Entry</button>
+        <button class="btn btn-secondary btn-inline import-btn hidden" data-entity="equipment_entries">⇪ Import from Sheet / Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -143,6 +147,7 @@
       <div class="section-header">
         <h2>Funding Received</h2>
         <button id="new-funding-btn" class="btn btn-primary btn-inline">+ Add Funding Entry</button>
+        <button class="btn btn-secondary btn-inline import-btn hidden" data-entity="project_funding">⇪ Import from Sheet / Excel</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -430,6 +435,29 @@
       <div class="modal-actions">
         <button class="btn btn-secondary modal-close" data-modal="review-modal">Cancel</button>
         <button id="rv-save" class="btn btn-primary">Save Review</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="import-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header"><h2 id="import-modal-title">Import Data</h2><button class="icon-btn modal-close" data-modal="import-modal">✕</button></div>
+      <p class="auth-sub" style="margin:0 0 10px;">
+        Paste a Google Sheets link (shared as "Anyone with the link can view") or upload an Excel/CSV file.
+        Columns are matched by header name, so it doesn't need to match our layout exactly.
+      </p>
+      <label class="field-label">Google Sheet link</label>
+      <input id="im-sheet-url" type="text" placeholder="https://docs.google.com/spreadsheets/d/..." />
+      <label class="field-label">Tab name (optional — defaults to the first/only tab)</label>
+      <input id="im-sheet-tab" type="text" placeholder="e.g. construction" />
+      <p class="auth-sub" style="margin:10px 0 4px;">— or —</p>
+      <label class="field-label">Upload Excel (.xlsx) or CSV file</label>
+      <input id="im-file" type="file" accept=".xlsx,.csv" />
+      <p id="import-modal-error" class="auth-error hidden"></p>
+      <div id="import-result" class="auth-sub hidden" style="margin-top:10px;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary modal-close" data-modal="import-modal">Close</button>
+        <button id="im-run" class="btn btn-primary">Import</button>
       </div>
     </div>
   </div>

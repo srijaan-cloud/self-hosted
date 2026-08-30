@@ -11,6 +11,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply tapasya-constructions --remote"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "hono": "^4.13.3",
     "openid-client": "^6.8.7"
   },
