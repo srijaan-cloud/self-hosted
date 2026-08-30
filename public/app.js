@@ -176,12 +176,17 @@ function renderProjectGrid(projects) {
 // ==================== NEW / EDIT PROJECT ====================
 
 function setupProjectModal() {
+  ['pm-price-sqft', 'pm-total-area', 'pm-extra-cost'].forEach((id) =>
+    document.getElementById(id).addEventListener('input', () => autoCalcBudget('pm'))
+  );
+
   document.getElementById('new-project-btn').addEventListener('click', () => {
     document.getElementById('project-modal-title').textContent = 'New Project';
     document.getElementById('pm-id').value = '';
-    ['pm-name', 'pm-client', 'pm-city', 'pm-address', 'pm-start', 'pm-end', 'pm-budget', 'pm-description'].forEach(
-      (id) => (document.getElementById(id).value = '')
-    );
+    [
+      'pm-name', 'pm-client', 'pm-city', 'pm-address', 'pm-start', 'pm-end', 'pm-budget', 'pm-description',
+      'pm-owner-phone', 'pm-price-sqft', 'pm-total-area', 'pm-extra-cost', 'pm-extra-cost-notes', 'pm-sold-price', 'pm-amenities',
+    ].forEach((id) => (document.getElementById(id).value = ''));
     document.getElementById('pm-status').value = 'planning';
     document.getElementById('project-modal-error').classList.add('hidden');
     openModal('project-modal');
@@ -200,6 +205,13 @@ function setupProjectModal() {
       status: document.getElementById('pm-status').value,
       total_budget: parseFloat(document.getElementById('pm-budget').value) || 0,
       description: document.getElementById('pm-description').value.trim(),
+      owner_phone: document.getElementById('pm-owner-phone').value.trim(),
+      price_per_sqft: parseFloat(document.getElementById('pm-price-sqft').value) || null,
+      total_area_sqft: parseFloat(document.getElementById('pm-total-area').value) || null,
+      extra_cost: parseFloat(document.getElementById('pm-extra-cost').value) || 0,
+      extra_cost_notes: document.getElementById('pm-extra-cost-notes').value.trim(),
+      sold_price_total: parseFloat(document.getElementById('pm-sold-price').value) || null,
+      amenities: document.getElementById('pm-amenities').value.trim(),
     };
     if (!body.name) {
       errEl.textContent = 'Project name is required';
@@ -234,6 +246,13 @@ function openEditProjectModal(p) {
   document.getElementById('pm-status').value = p.status;
   document.getElementById('pm-budget').value = p.total_budget;
   document.getElementById('pm-description').value = p.description || '';
+  document.getElementById('pm-owner-phone').value = p.owner_phone || '';
+  document.getElementById('pm-price-sqft').value = p.price_per_sqft || '';
+  document.getElementById('pm-total-area').value = p.total_area_sqft || '';
+  document.getElementById('pm-extra-cost').value = p.extra_cost || '';
+  document.getElementById('pm-extra-cost-notes').value = p.extra_cost_notes || '';
+  document.getElementById('pm-sold-price').value = p.sold_price_total || '';
+  document.getElementById('pm-amenities').value = p.amenities || '';
   document.getElementById('project-modal-error').classList.add('hidden');
   openModal('project-modal');
 }

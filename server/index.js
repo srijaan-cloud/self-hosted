@@ -459,8 +459,9 @@ app.get('/api/projects/:id', async (c) => {
 
 const PROJECT_FIELDS = [
   'name', 'client_name', 'site_address', 'city', 'start_date', 'expected_end_date',
-  'actual_end_date', 'status', 'total_budget', 'description',
+  'actual_end_date', 'status', 'total_budget', 'description', 'owner_phone',
   'price_per_sqft', 'total_area_sqft', 'sold_price_total', 'amenities', 'cover_media_id',
+  'extra_cost', 'extra_cost_notes',
 ];
 
 app.post('/api/projects', requireDirector, async (c) => {

@@ -110,6 +110,16 @@ function statusLabel(status) {
   return { planning: 'Planning', ongoing: 'Ongoing', on_hold: 'On Hold', completed: 'Completed' }[status] || status;
 }
 
+// Shared by the "New/Edit Project" modals on both the dashboard and the
+// project detail page — price-per-sqft x area (+ extra cost) auto-fills the
+// budget field as the admin types, without locking it from manual override.
+function autoCalcBudget(prefix) {
+  const price = parseFloat(document.getElementById(`${prefix}-price-sqft`).value) || 0;
+  const area = parseFloat(document.getElementById(`${prefix}-total-area`).value) || 0;
+  const extra = parseFloat(document.getElementById(`${prefix}-extra-cost`).value) || 0;
+  if (price && area) document.getElementById(`${prefix}-budget`).value = (price * area + extra).toFixed(2);
+}
+
 function openModal(id) {
   document.getElementById(id).classList.remove('hidden');
 }
