@@ -126,6 +126,7 @@ async function loadPublicProjectView() {
     `${p.client_name || ''}${p.city ? ' · ' + p.city : ''} · <span class="status-pill status-${p.status}">${statusLabel(p.status)}</span>`;
   document.getElementById('project-kpi-row').innerHTML = '';
   document.getElementById('tab-overview').classList.add('hidden');
+  document.getElementById('pricing-card').classList.add('hidden');
   renderDescriptionAndTimeline(p);
 }
 
