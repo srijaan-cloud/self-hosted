@@ -1,14 +1,13 @@
 import * as client from 'openid-client';
 import { requestOtp } from './auth.js';
 
-// Single-admin Google sign-in: unlike the sibling apps (which manage a table
-// of staff users), there is exactly one person allowed in here, and their
-// email is a fixed config value (ADMIN_EMAIL). Matching that email in the
-// Google claims isn't enough on its own to grant access, though — a Google
-// account can be phished, left signed in on a shared machine, etc. — so a
-// matching email only triggers an OTP emailed to that same address; admin
-// access is granted by server/index.js's /api/auth/verify-otp, once that
-// code comes back correct.
+// Google sign-in with role-gated admin access. ADMIN_EMAIL is the
+// unconditional, un-demotable bootstrap admin (so the site can never lock
+// itself out); beyond that, the `users.role` column (assignable from
+// /admin.html → Users) decides who else gets in. Either way, having the
+// 'admin' role isn't enough on its own — it only triggers an OTP emailed to
+// that same address; actual admin access is granted by
+// server/index.js's /api/auth/verify-otp, once that code comes back correct.
 
 function redirectUri(c) {
   const base = c.env.PUBLIC_BASE_URL || new URL(c.req.url).origin;
@@ -95,15 +94,22 @@ export async function googleAuthCallback(c) {
     session.name = name;
     session.email = email;
 
+    // A brand-new row seeds its role from ADMIN_EMAIL; an existing row's role
+    // (possibly since promoted/demoted from /admin.html → Users) is left
+    // alone by ON CONFLICT — this upsert only ever touches name/last_login.
+    const initialRole = email === adminEmail ? 'admin' : 'viewer';
     await c.env.DB.prepare(
-      `INSERT INTO users (email, name, first_login_at, last_login_at) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `INSERT INTO users (email, name, role, first_login_at, last_login_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        ON CONFLICT(email) DO UPDATE SET name = excluded.name, last_login_at = CURRENT_TIMESTAMP`
-    ).bind(email, name).run();
+    ).bind(email, name, initialRole).run();
+
+    const userRow = await c.env.DB.prepare('SELECT role FROM users WHERE email = ?').bind(email).first();
+    const hasAdminRole = email === adminEmail || (userRow && userRow.role === 'admin');
 
     // Anyone can already see everything on this site without an account, so
     // a non-admin Google sign-in isn't an error — just send them back to the
     // normal public page rather than accusing them of doing something wrong.
-    if (email !== adminEmail) {
+    if (!hasAdminRole) {
       return c.redirect('/');
     }
 

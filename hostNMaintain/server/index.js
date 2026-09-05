@@ -6,22 +6,25 @@ import { sessionMiddleware, destroySession } from './session.js';
 
 const app = new Hono();
 
-// Single admin, two ways in: the Basic Auth password (always available), or
+// Two ways into admin: the Basic Auth password (always available), or
 // Google sign-in + an emailed OTP (server/oauth.js, server/auth.js) —
-// optional, toggled from Site Content → Access. Matching ADMIN_EMAIL in the
-// Google account alone only triggers the OTP email; it doesn't grant access
-// by itself (see /api/auth/verify-otp below). No role system needed since
-// there's only ever one kind of logged-in user here.
+// optional, toggled from Site Content → Access. For the Google path, having
+// the 'admin' role (or being ADMIN_EMAIL, which is always admin) only
+// triggers the OTP email; it doesn't grant access by itself (see
+// /api/auth/verify-otp below).
 function requireAdmin(c, next) {
   const session = c.get('session');
   if (session && session.isAdmin) return next();
   return basicAuth({ username: 'admin', password: c.env.ADMIN_PASSWORD })(c, next);
 }
 
+const VALID_ROLES = ['admin', 'viewer'];
+
 app.use('/admin.html', sessionMiddleware, requireAdmin);
 app.use('/api/leads', sessionMiddleware, requireAdmin);
 app.use('/api/settings/site-content', sessionMiddleware, requireAdmin);
 app.use('/api/users', sessionMiddleware, requireAdmin);
+app.use('/api/users/*', sessionMiddleware, requireAdmin);
 app.use('/auth/*', sessionMiddleware);
 app.use('/api/auth/*', sessionMiddleware);
 
@@ -30,6 +33,23 @@ app.get('/api/users', async (c) => {
     `SELECT email, name, role, first_login_at, last_login_at FROM users ORDER BY last_login_at DESC`
   ).all();
   return c.json({ users: results });
+});
+
+app.patch('/api/users/:email/role', async (c) => {
+  const email = decodeURIComponent(c.req.param('email')).trim().toLowerCase();
+  const adminEmail = String(c.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  // ADMIN_EMAIL is the bootstrap admin — always admin, not editable here, so
+  // there's never a way to lock every admin out of the site.
+  if (email === adminEmail) {
+    return c.json({ error: 'This account’s role is fixed and can’t be changed here' }, 400);
+  }
+  const { role } = await c.req.json();
+  if (!VALID_ROLES.includes(role)) {
+    return c.json({ error: `role must be one of: ${VALID_ROLES.join(', ')}` }, 400);
+  }
+  const result = await c.env.DB.prepare('UPDATE users SET role = ? WHERE email = ?').bind(role, email).run();
+  if (result.meta.changes === 0) return c.json({ error: 'No such user' }, 404);
+  return c.json({ ok: true, email, role });
 });
 
 app.get('/auth/google', oauth.googleAuthStart);

@@ -35,6 +35,12 @@
       font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
       padding: 3px 9px; border-radius: 999px; background: var(--surface-strong); color: var(--ink-soft);
     }
+    .role-select {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--ink); padding: 7px 10px; font-family: inherit; font-size: 0.82rem;
+    }
+    .role-select option { background: var(--bg-alt); color: var(--ink); }
+    .role-select:disabled { opacity: 0.5; }
 
     .content-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
     .content-field label { font-size: 0.8rem; color: var(--ink-soft); font-weight: 600; }
@@ -235,30 +241,68 @@
       });
 
     // ---------- Users ----------
-    fetch('/api/users')
-      .then((r) => r.json())
-      .then(({ users }) => {
-        const list = document.getElementById('users-list');
-        if (!users.length) {
-          list.textContent = 'No one has signed in with Google yet.';
-          return;
-        }
-        list.innerHTML = users.map((u) => `
-          <div class="user-card">
-            <div>
-              <div class="user-name">${escapeHtml(u.name)} <span class="user-role-badge">${escapeHtml(u.role)}</span></div>
-              <div class="user-email">${escapeHtml(u.email)}</div>
+    const USER_ROLES = ['viewer', 'admin'];
+
+    function roleSelectHtml(email, currentRole) {
+      const options = USER_ROLES.map(
+        (r) => `<option value="${escapeHtml(r)}" ${r === currentRole ? 'selected' : ''}>${escapeHtml(r)}</option>`
+      ).join('');
+      return `<select class="role-select" data-email="${escapeHtml(email)}" data-current-role="${escapeHtml(currentRole)}">${options}</select>`;
+    }
+
+    function loadUsers() {
+      fetch('/api/users')
+        .then((r) => r.json())
+        .then(({ users }) => {
+          const list = document.getElementById('users-list');
+          if (!users.length) {
+            list.textContent = 'No one has signed in with Google yet.';
+            return;
+          }
+          list.innerHTML = users.map((u) => `
+            <div class="user-card">
+              <div>
+                <div class="user-name">${escapeHtml(u.name)} <span class="user-role-badge">${escapeHtml(u.role)}</span></div>
+                <div class="user-email">${escapeHtml(u.email)}</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div class="user-meta">
+                  First seen ${escapeHtml(u.first_login_at)}<br>
+                  Last login ${escapeHtml(u.last_login_at)}
+                </div>
+                ${roleSelectHtml(u.email, u.role)}
+              </div>
             </div>
-            <div class="user-meta">
-              First seen ${escapeHtml(u.first_login_at)}<br>
-              Last login ${escapeHtml(u.last_login_at)}
-            </div>
-          </div>
-        `).join('');
-      })
-      .catch(() => {
-        document.getElementById('users-list').textContent = 'Failed to load users.';
-      });
+          `).join('');
+
+          list.querySelectorAll('.role-select').forEach((select) => {
+            select.addEventListener('change', async () => {
+              const email = select.dataset.email;
+              const newRole = select.value;
+              const previousRole = select.dataset.currentRole;
+              select.disabled = true;
+              try {
+                const res = await fetch(`/api/users/${encodeURIComponent(email)}/role`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ role: newRole }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Could not update role');
+                loadUsers();
+              } catch (err) {
+                alert(err.message);
+                select.value = previousRole;
+                select.disabled = false;
+              }
+            });
+          });
+        })
+        .catch(() => {
+          document.getElementById('users-list').textContent = 'Failed to load users.';
+        });
+    }
+    loadUsers();
 
     // ---------- Site content ----------
     const contentForm = document.getElementById('content-form');
