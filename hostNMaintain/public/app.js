@@ -144,7 +144,7 @@
         // its hand-drawn construction icon as a special case; anything else
         // falls back to a plain initials badge.
         const visual = imageUrl
-          ? `<div class="client-visual client-visual-photo" style="background-image: url('${escapeHtml(imageUrl)}')" aria-hidden="true"></div>`
+          ? `<div class="client-visual client-visual-photo" aria-hidden="true"><img src="${escapeHtml(imageUrl)}" alt="" /></div>`
           : name.trim() === 'Tapasya Constructions'
           ? `<div class="client-visual client-visual-construction" aria-hidden="true">
                 <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
