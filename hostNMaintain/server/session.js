@@ -1,11 +1,15 @@
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 
-const TTL_SECONDS = 60 * 60 * 24 * 14; // 14 days
+// A merely-recognized (non-admin) session can stick around for a while — it
+// grants no access to anything. An admin session is deliberately much
+// shorter (a sliding 30-minute idle timeout, refreshed on every authenticated
+// request) so admin access is never silently relied on indefinitely — 30
+// minutes of no activity against /admin.html and its APIs, and it's gone.
+const DEFAULT_TTL_SECONDS = 60 * 60 * 24 * 14; // 14 days
+const ADMIN_TTL_SECONDS = 30 * 60; // 30 minutes
 const COOKIE_NAME = 'sid';
 
 // KV-backed session, same pattern as tapasyaConstructions/server/session.js.
-// This site only ever has one kind of session (an admin who signed in with
-// Google — see server/oauth.js), so the stored shape is just { isAdmin, email }.
 export async function sessionMiddleware(c, next) {
   const sid = getCookie(c, COOKIE_NAME);
   let session = {};
@@ -35,16 +39,17 @@ export async function sessionMiddleware(c, next) {
   // callback always saw no session and failed with "expired".
   if (!finalSid && Object.keys(finalSession).length === 0) return;
 
+  const ttlSeconds = finalSession.isAdmin ? ADMIN_TTL_SECONDS : DEFAULT_TTL_SECONDS;
   const id = finalSid || crypto.randomUUID();
   await c.env.KV.put(`session:${id}`, JSON.stringify(finalSession), {
-    expirationTtl: TTL_SECONDS,
+    expirationTtl: ttlSeconds,
   });
   setCookie(c, COOKIE_NAME, id, {
     httpOnly: true,
     secure: new URL(c.req.url).protocol === 'https:',
     sameSite: 'Lax',
     path: '/',
-    maxAge: TTL_SECONDS,
+    maxAge: ttlSeconds,
   });
 }
 

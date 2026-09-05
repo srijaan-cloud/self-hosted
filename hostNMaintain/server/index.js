@@ -1,21 +1,82 @@
 import { Hono } from 'hono';
-import { basicAuth } from 'hono/basic-auth';
 import * as oauth from './oauth.js';
 import * as auth from './auth.js';
 import { sessionMiddleware, destroySession } from './session.js';
 
 const app = new Hono();
 
-// Two ways into admin: the Basic Auth password (always available), or
-// Google sign-in + an emailed OTP (server/oauth.js, server/auth.js) —
-// optional, toggled from Site Content → Access. For the Google path, having
-// the 'admin' role (or being ADMIN_EMAIL, which is always admin) only
-// triggers the OTP email; it doesn't grant access by itself (see
-// /api/auth/verify-otp below).
-function requireAdmin(c, next) {
+// Two ways into admin: the Basic Auth password (always available, with
+// brute-force lockout below), or Google sign-in + an emailed OTP
+// (server/oauth.js, server/auth.js) — optional, toggled from Site Content →
+// Access. For the Google path, having the 'admin' role (or being
+// ADMIN_EMAIL, which is always admin) only triggers the OTP email; it
+// doesn't grant access by itself (see /api/auth/verify-otp below). An admin
+// session (however obtained) expires after 30 minutes idle — see
+// server/session.js — so it's never silently relied on indefinitely.
+
+const LOGIN_LOCKOUT_THRESHOLD = 3;
+const LOGIN_LOCKOUT_SECONDS = 30 * 60;
+
+function parseBasicAuth(c) {
+  const header = c.req.header('Authorization') || '';
+  const match = header.match(/^Basic\s+(.+)$/i);
+  if (!match) return null;
+  let decoded;
+  try {
+    decoded = atob(match[1]);
+  } catch {
+    return null;
+  }
+  const sep = decoded.indexOf(':');
+  if (sep === -1) return null;
+  return { username: decoded.slice(0, sep), password: decoded.slice(sep + 1) };
+}
+
+function requireBasicAuthChallenge(c) {
+  c.header('WWW-Authenticate', 'Basic realm="HostNMaintain Admin"');
+  return c.text('Unauthorized', 401);
+}
+
+// Brute-force protection on the admin password: after 3 wrong attempts from
+// the same IP, password-based admin login is locked for 30 minutes —
+// independent of the Google+OTP path, which has its own attempt limit
+// (server/auth.js's OTP_MAX_ATTEMPTS).
+async function requireAdminPassword(c) {
+  const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+  const key = `admin-login-attempts:${ip}`;
+  const raw = await c.env.KV.get(key);
+  const state = raw ? JSON.parse(raw) : { count: 0, lockedUntil: 0 };
+
+  if (state.lockedUntil && Date.now() < state.lockedUntil) {
+    const minutesLeft = Math.ceil((state.lockedUntil - Date.now()) / 60000);
+    return c.text(`Too many incorrect password attempts. Try again in ${minutesLeft} minute(s).`, 429);
+  }
+
+  const creds = parseBasicAuth(c);
+  const ok = !!creds && creds.username === 'admin' && creds.password === c.env.ADMIN_PASSWORD;
+
+  if (ok) {
+    if (state.count > 0) await c.env.KV.delete(key);
+    return null;
+  }
+
+  if (creds) {
+    state.count += 1;
+    if (state.count >= LOGIN_LOCKOUT_THRESHOLD) {
+      state.lockedUntil = Date.now() + LOGIN_LOCKOUT_SECONDS * 1000;
+    }
+    await c.env.KV.put(key, JSON.stringify(state), { expirationTtl: LOGIN_LOCKOUT_SECONDS + 60 });
+  }
+
+  return requireBasicAuthChallenge(c);
+}
+
+async function requireAdmin(c, next) {
   const session = c.get('session');
   if (session && session.isAdmin) return next();
-  return basicAuth({ username: 'admin', password: c.env.ADMIN_PASSWORD })(c, next);
+  const denied = await requireAdminPassword(c);
+  if (denied) return denied;
+  return next();
 }
 
 const VALID_ROLES = ['admin', 'viewer'];
