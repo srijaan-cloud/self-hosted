@@ -1,0 +1,36 @@
+name = "shriya-function-hall"
+main = "server/index.js"
+compatibility_date = "2026-08-25"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+# Without this, Cloudflare serves matching static files directly, bypassing the
+# Worker — which would skip the admin-API auth gate. Forces every request
+# through server/index.js first; it decides when to fall back to ASSETS.
+run_worker_first = true
+html_handling = "none"
+
+[[routes]]
+pattern = "shriyafunctionhall.klmn2.com"
+custom_domain = true
+
+[vars]
+PUBLIC_BASE_URL = "https://shriyafunctionhall.klmn2.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shriya-function-hall"
+database_id = "f9443f57-bce7-464e-9527-fa637a9f06d8"
+
+# Used for admin sessions.
+[[kv_namespaces]]
+binding = "KV"
+id = "62ebfcda9963407ba5ced38b986fc3e2"
+
+# Create with `npx wrangler r2 bucket create shriya-function-hall-uploads`.
+# Stores gallery/event photos.
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "shriya-function-hall-uploads"

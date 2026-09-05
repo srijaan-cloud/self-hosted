@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Shriya Function Hall</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f5f0e8; margin: 0; padding: 24px; color: #2a2320; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.3rem; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  label { display: block; font-size: 0.85rem; margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; padding: 7px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; }
+  button { padding: 8px 14px; background: #6b1220; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; margin-top: 12px; }
+  button.secondary { background: #999; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #eee; }
+  .msg { font-size: 0.85rem; min-height: 1.2em; margin-top: 8px; }
+  .msg.error { color: #b5432f; }
+  .msg.ok { color: #3e8f5c; }
+  .thumb { width: 60px; height: 45px; object-fit: cover; border-radius: 4px; }
+  a.logout { font-size: 0.85rem; }
+
+  .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .calendar-header button { width: auto; padding: 4px 10px; margin-top: 0; background: #6b1220; }
+  .calendar-header .month-label { font-weight: bold; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .calendar-grid .dow { text-align: center; font-size: 0.75rem; color: #6b5f57; padding-bottom: 4px; }
+  .calendar-grid .day { aspect-ratio: 1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; background: #eee; }
+  .calendar-grid .day.blank { background: transparent; }
+  .calendar-grid .day.available { background: #e4f3ea; color: #3e8f5c; font-weight: 600; }
+  .calendar-grid .day.half { background: #fbeecb; color: #d9a52c; font-weight: 600; }
+  .calendar-grid .day.booked { background: #f6dedb; color: #b5432f; font-weight: 600; text-decoration: line-through; }
+  .legend { display: flex; gap: 14px; margin-top: 12px; font-size: 0.8rem; color: #6b5f57; flex-wrap: wrap; }
+  .legend .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: middle; }
+  .legend .swatch.available { background: #3e8f5c; }
+  .legend .swatch.half { background: #d9a52c; }
+  .legend .swatch.booked { background: #b5432f; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <h1>Shriya Function Hall — Admin</h1>
+    <div>
+      <span id="whoami" style="font-size:0.85rem; margin-right:12px;"></span>
+      <a href="#" class="logout" id="logoutLink">Log out</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Availability Calendar</h2>
+    <div class="calendar-header">
+      <button id="prevMonth" type="button">&larr; Prev</button>
+      <div class="month-label" id="monthLabel">&nbsp;</div>
+      <button id="nextMonth" type="button">Next &rarr;</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <div class="legend">
+      <span><span class="swatch available"></span>Available</span>
+      <span><span class="swatch half"></span>Half-day booked</span>
+      <span><span class="swatch booked"></span>Fully booked</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Add Booking</h2>
+    <form id="bookingForm">
+      <label>Date</label>
+      <input type="date" id="eventDate" required>
+      <label>Session</label>
+      <select id="session">
+        <option value="full_day">Full day</option>
+        <option value="morning">Morning (half day)</option>
+        <option value="evening">Evening (half day)</option>
+      </select>
+      <label>Customer name (optional, admin-only)</label>
+      <input type="text" id="customerName">
+      <label>Event type (optional, admin-only)</label>
+      <input type="text" id="eventType" placeholder="e.g. Wedding, Reception">
+      <label>Notes (optional, admin-only)</label>
+      <textarea id="notes" rows="2"></textarea>
+      <div class="msg" id="bookingMsg"></div>
+      <button type="submit">Book Slot</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Upcoming Bookings</h2>
+    <table id="bookingsTable">
+      <thead><tr><th>Date</th><th>Session</th><th>Customer</th><th>Event</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Add Gallery Photos</h2>
+    <p style="font-size:0.85rem; color:#6b5f57; margin-top:-6px;">Select as many photos as you like at once — e.g. all the photos from one event. They're added to both the homepage slideshow and the gallery grid.</p>
+    <form id="galleryForm">
+      <label>Photos (max 3MB each)</label>
+      <input type="file" id="photoFile" accept="image/*" multiple required>
+      <label>Caption (optional — applied to all selected photos, e.g. "Reddy Wedding, Nov 2026")</label>
+      <input type="text" id="photoCaption">
+      <div class="msg" id="galleryMsg"></div>
+      <button type="submit">Upload Photos</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Gallery</h2>
+    <table id="galleryTable">
+      <thead><tr><th></th><th>Caption</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+<script src="/admin.js"></script>
+</body>
+</html>
