@@ -79,8 +79,11 @@ export async function googleAuthCallback(c) {
     const email = String(claims.email || '').trim().toLowerCase();
     const adminEmail = String(c.env.ADMIN_EMAIL || '').trim().toLowerCase();
 
+    // Anyone can already see everything on this site without an account, so
+    // a non-admin Google sign-in isn't an error — just send them back to the
+    // normal public page rather than accusing them of doing something wrong.
     if (claims.email_verified === false || !email || email !== adminEmail) {
-      return c.redirect('/login.html?error=unauthorized');
+      return c.redirect('/');
     }
 
     const session = c.get('session');
