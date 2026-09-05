@@ -21,8 +21,16 @@ function requireAdmin(c, next) {
 app.use('/admin.html', sessionMiddleware, requireAdmin);
 app.use('/api/leads', sessionMiddleware, requireAdmin);
 app.use('/api/settings/site-content', sessionMiddleware, requireAdmin);
+app.use('/api/users', sessionMiddleware, requireAdmin);
 app.use('/auth/*', sessionMiddleware);
 app.use('/api/auth/*', sessionMiddleware);
+
+app.get('/api/users', async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT email, name, role, first_login_at, last_login_at FROM users ORDER BY last_login_at DESC`
+  ).all();
+  return c.json({ users: results });
+});
 
 app.get('/auth/google', oauth.googleAuthStart);
 app.get('/auth/google/callback', oauth.googleAuthCallback);

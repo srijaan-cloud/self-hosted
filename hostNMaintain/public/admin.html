@@ -23,6 +23,19 @@
     .lead-message { margin-top: 8px; white-space: pre-wrap; font-size: 0.9rem; }
     .lead-email { color: var(--cyan); }
 
+    .user-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 14px 18px; margin-bottom: 10px; display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+    .user-name { font-weight: 700; font-family: var(--font-display); }
+    .user-email { color: var(--ink-soft); font-size: 0.85rem; }
+    .user-meta { color: var(--ink-faint); font-size: 0.78rem; text-align: right; }
+    .user-role-badge {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 3px 9px; border-radius: 999px; background: var(--surface-strong); color: var(--ink-soft);
+    }
+
     .content-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
     .content-field label { font-size: 0.8rem; color: var(--ink-soft); font-weight: 600; }
     .content-field .hint { font-size: 0.72rem; color: var(--ink-faint); font-weight: 400; }
@@ -64,11 +77,16 @@
 
     <div class="admin-tabs">
       <button class="admin-tab-btn active" data-tab="leads">Leads</button>
+      <button class="admin-tab-btn" data-tab="users">Users</button>
       <button class="admin-tab-btn" data-tab="content">Site Content</button>
     </div>
 
     <div id="panel-leads" class="admin-panel">
       <div id="leads-list">Loading…</div>
+    </div>
+
+    <div id="panel-users" class="admin-panel" hidden>
+      <div id="users-list">Loading…</div>
     </div>
 
     <div id="panel-content" class="admin-panel" hidden>
@@ -79,7 +97,7 @@
             <input type="checkbox" name="google_login_enabled" style="width:auto; margin:0;" />
             Show a "Login" link on the site and allow signing in with Google
           </label>
-          <span class="hint">Only the account in ADMIN_EMAIL can actually sign in — this doesn't add other users. Basic Auth (the password login) keeps working either way.</span>
+          <span class="hint">Any Google account can sign in and will show up in the Users tab — only the account in ADMIN_EMAIL can pass the OTP step to get admin access. Basic Auth (the password login) keeps working either way.</span>
         </div>
 
         <div class="content-section-title">Hero</div>
@@ -214,6 +232,32 @@
       })
       .catch(() => {
         document.getElementById('leads-list').textContent = 'Failed to load leads.';
+      });
+
+    // ---------- Users ----------
+    fetch('/api/users')
+      .then((r) => r.json())
+      .then(({ users }) => {
+        const list = document.getElementById('users-list');
+        if (!users.length) {
+          list.textContent = 'No one has signed in with Google yet.';
+          return;
+        }
+        list.innerHTML = users.map((u) => `
+          <div class="user-card">
+            <div>
+              <div class="user-name">${escapeHtml(u.name)} <span class="user-role-badge">${escapeHtml(u.role)}</span></div>
+              <div class="user-email">${escapeHtml(u.email)}</div>
+            </div>
+            <div class="user-meta">
+              First seen ${escapeHtml(u.first_login_at)}<br>
+              Last login ${escapeHtml(u.last_login_at)}
+            </div>
+          </div>
+        `).join('');
+      })
+      .catch(() => {
+        document.getElementById('users-list').textContent = 'Failed to load users.';
       });
 
     // ---------- Site content ----------

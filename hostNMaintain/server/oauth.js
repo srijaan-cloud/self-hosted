@@ -91,8 +91,14 @@ export async function googleAuthCallback(c) {
     // can show "Logged in as ...") independently of whether they get admin
     // access — that's a separate, higher bar gated by the OTP step below.
     const session = c.get('session');
-    session.name = claims.name || email;
+    const name = claims.name || email;
+    session.name = name;
     session.email = email;
+
+    await c.env.DB.prepare(
+      `INSERT INTO users (email, name, first_login_at, last_login_at) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       ON CONFLICT(email) DO UPDATE SET name = excluded.name, last_login_at = CURRENT_TIMESTAMP`
+    ).bind(email, name).run();
 
     // Anyone can already see everything on this site without an account, so
     // a non-admin Google sign-in isn't an error — just send them back to the
