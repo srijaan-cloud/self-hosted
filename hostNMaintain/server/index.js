@@ -1,14 +1,17 @@
 import { Hono } from 'hono';
 import { basicAuth } from 'hono/basic-auth';
 import * as oauth from './oauth.js';
+import * as auth from './auth.js';
 import { sessionMiddleware, destroySession } from './session.js';
 
 const app = new Hono();
 
 // Single admin, two ways in: the Basic Auth password (always available), or
-// Google sign-in (server/oauth.js) — optional, toggled from Site Content →
-// Access, and only ever grants access to the one email in ADMIN_EMAIL. No
-// role system needed since there's only ever one kind of logged-in user here.
+// Google sign-in + an emailed OTP (server/oauth.js, server/auth.js) —
+// optional, toggled from Site Content → Access. Matching ADMIN_EMAIL in the
+// Google account alone only triggers the OTP email; it doesn't grant access
+// by itself (see /api/auth/verify-otp below). No role system needed since
+// there's only ever one kind of logged-in user here.
 function requireAdmin(c, next) {
   const session = c.get('session');
   if (session && session.isAdmin) return next();
@@ -19,12 +22,37 @@ app.use('/admin.html', sessionMiddleware, requireAdmin);
 app.use('/api/leads', sessionMiddleware, requireAdmin);
 app.use('/api/settings/site-content', sessionMiddleware, requireAdmin);
 app.use('/auth/*', sessionMiddleware);
+app.use('/api/auth/*', sessionMiddleware);
 
 app.get('/auth/google', oauth.googleAuthStart);
 app.get('/auth/google/callback', oauth.googleAuthCallback);
 app.get('/auth/logout', (c) => {
   destroySession(c);
   return c.redirect('/');
+});
+
+app.post('/api/auth/verify-otp', async (c) => {
+  const session = c.get('session');
+  const email = session.pendingAdminEmail;
+  if (!email) return c.json({ error: 'Nothing to verify — sign in with Google again' }, 400);
+  const { code } = await c.req.json();
+  const ok = await auth.verifyOtp(c.env, email, String(code || '').trim());
+  if (!ok) return c.json({ error: 'Incorrect or expired code' }, 400);
+  session.pendingAdminEmail = null;
+  session.isAdmin = true;
+  session.email = email;
+  return c.json({ ok: true });
+});
+
+app.post('/api/auth/resend-otp', async (c) => {
+  const email = c.get('session').pendingAdminEmail;
+  if (!email) return c.json({ error: 'Nothing to verify — sign in with Google again' }, 400);
+  try {
+    await auth.requestOtp(c.env, email);
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ error: err.message }, 400);
+  }
 });
 
 function isValidEmail(email) {

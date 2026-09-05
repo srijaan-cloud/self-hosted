@@ -1,10 +1,14 @@
 import * as client from 'openid-client';
+import { requestOtp } from './auth.js';
 
 // Single-admin Google sign-in: unlike the sibling apps (which manage a table
-// of staff users and a first-login OTP-verification step), there is exactly
-// one person allowed in here, and their email is a fixed config value
-// (ADMIN_EMAIL) — so a successful Google sign-in either matches that email
-// or it's rejected outright. No user table, no OTP step needed.
+// of staff users), there is exactly one person allowed in here, and their
+// email is a fixed config value (ADMIN_EMAIL). Matching that email in the
+// Google claims isn't enough on its own to grant access, though — a Google
+// account can be phished, left signed in on a shared machine, etc. — so a
+// matching email only triggers an OTP emailed to that same address; admin
+// access is granted by server/index.js's /api/auth/verify-otp, once that
+// code comes back correct.
 
 function redirectUri(c) {
   const base = c.env.PUBLIC_BASE_URL || new URL(c.req.url).origin;
@@ -87,9 +91,13 @@ export async function googleAuthCallback(c) {
     }
 
     const session = c.get('session');
-    session.isAdmin = true;
-    session.email = email;
-    return c.redirect('/admin.html');
+    session.pendingAdminEmail = email;
+    try {
+      await requestOtp(c.env, email);
+    } catch (err) {
+      return c.redirect('/login.html?error=failed');
+    }
+    return c.redirect('/login.html?step=verify');
   } catch (err) {
     return c.redirect('/login.html?error=failed');
   }
