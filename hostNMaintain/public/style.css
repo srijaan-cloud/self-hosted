@@ -283,9 +283,6 @@ p { margin: 0; line-height: 1.6; }
   color: var(--ink-faint);
   font-size: 0.82rem;
 }
-.footer-inner a { color: var(--ink-soft); font-weight: 600; }
-.footer-inner a:hover { color: var(--ink); }
-.footer-links { display: flex; align-items: center; gap: 18px; }
 
 @media (max-width: 640px) {
   .site-nav { display: none; }
