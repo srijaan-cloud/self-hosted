@@ -44,6 +44,12 @@ app.post('/api/auth/verify-otp', async (c) => {
   return c.json({ ok: true });
 });
 
+app.get('/api/auth/me', (c) => {
+  const session = c.get('session');
+  if (!session.name) return c.json({ loggedIn: false });
+  return c.json({ loggedIn: true, name: session.name, email: session.email, isAdmin: !!session.isAdmin });
+});
+
 app.post('/api/auth/resend-otp', async (c) => {
   const email = c.get('session').pendingAdminEmail;
   if (!email) return c.json({ error: 'Nothing to verify — sign in with Google again' }, 400);

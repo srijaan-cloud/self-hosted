@@ -83,14 +83,24 @@ export async function googleAuthCallback(c) {
     const email = String(claims.email || '').trim().toLowerCase();
     const adminEmail = String(c.env.ADMIN_EMAIL || '').trim().toLowerCase();
 
-    // Anyone can already see everything on this site without an account, so
-    // a non-admin Google sign-in isn't an error — just send them back to the
-    // normal public page rather than accusing them of doing something wrong.
-    if (claims.email_verified === false || !email || email !== adminEmail) {
+    if (claims.email_verified === false || !email) {
       return c.redirect('/');
     }
 
+    // Recognize anyone who successfully signs in with Google (so the header
+    // can show "Logged in as ...") independently of whether they get admin
+    // access — that's a separate, higher bar gated by the OTP step below.
     const session = c.get('session');
+    session.name = claims.name || email;
+    session.email = email;
+
+    // Anyone can already see everything on this site without an account, so
+    // a non-admin Google sign-in isn't an error — just send them back to the
+    // normal public page rather than accusing them of doing something wrong.
+    if (email !== adminEmail) {
+      return c.redirect('/');
+    }
+
     session.pendingAdminEmail = email;
     try {
       await requestOtp(c.env, email);

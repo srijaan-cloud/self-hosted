@@ -100,9 +100,14 @@ p { margin: 0; line-height: 1.6; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
 .brand-name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
 .brand-sub { font-size: 0.68rem; color: var(--ink-faint); letter-spacing: 0.04em; }
-.site-nav { display: flex; gap: 26px; }
+.site-nav { display: flex; align-items: center; gap: 26px; }
 .site-nav a { font-size: 0.86rem; color: var(--ink-soft); font-weight: 500; transition: color 0.15s; }
 .site-nav a:hover { color: var(--ink); }
+#header-identity:not([hidden]) { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; }
+#header-identity-name { color: var(--ink); font-weight: 600; }
+#header-identity-name::before { content: "👋 "; }
+#header-logout-link { color: var(--ink-faint) !important; font-weight: 500 !important; }
+#header-logout-link:hover { color: var(--ink-soft) !important; }
 
 /* ---------- Buttons ---------- */
 .btn {

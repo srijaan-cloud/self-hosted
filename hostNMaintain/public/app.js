@@ -189,11 +189,29 @@
       setText('contact-heading', content.contact_heading);
       setText('contact-sub', content.contact_sub);
       setText('footer-text', content.footer_text);
-      const loginLink = document.getElementById('header-login-link');
-      if (loginLink) loginLink.hidden = !content.google_login_enabled;
+      return content.google_login_enabled;
     })
-    .catch(() => {
-      // Static defaults already in the HTML stay as-is.
+    .catch(() => false)
+    .then((googleLoginEnabled) => {
+      const loginLink = document.getElementById('header-login-link');
+      const identity = document.getElementById('header-identity');
+      if (!loginLink || !identity) return;
+
+      fetch('/api/auth/me')
+        .then((r) => r.json())
+        .then((me) => {
+          if (me.loggedIn) {
+            loginLink.hidden = true;
+            identity.hidden = false;
+            document.getElementById('header-identity-name').textContent = me.name;
+          } else {
+            identity.hidden = true;
+            loginLink.hidden = !googleLoginEnabled;
+          }
+        })
+        .catch(() => {
+          loginLink.hidden = !googleLoginEnabled;
+        });
     });
 })();
 
