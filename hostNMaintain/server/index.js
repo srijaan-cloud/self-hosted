@@ -5,17 +5,48 @@ import { sessionMiddleware, destroySession } from './session.js';
 
 const app = new Hono();
 
-// Two ways into admin: the Basic Auth password (always available, with
-// brute-force lockout below), or Google sign-in + an emailed OTP
-// (server/oauth.js, server/auth.js) — optional, toggled from Site Content →
-// Access. For the Google path, having the 'admin' role (or being
-// ADMIN_EMAIL, which is always admin) only triggers the OTP email; it
-// doesn't grant access by itself (see /api/auth/verify-otp below). An admin
-// session (however obtained) expires after 30 minutes idle — see
+// Two ways into admin, both password-gated:
+// 1. Basic Auth — one prompt, the password, with brute-force lockout below.
+// 2. Google sign-in — now three factors, not one: matching the 'admin' role
+//    (or being ADMIN_EMAIL) triggers an emailed OTP (server/auth.js); OTP
+//    success doesn't grant access either, it only unlocks a third prompt for
+//    the same admin password (POST /api/auth/verify-admin-password, sharing
+//    the lockout below) — only after that succeeds is the session marked
+//    isAdmin. So Google-path admin access is Google account + email OTP +
+//    password, not just the first two.
+// An admin session (however obtained) expires after 30 minutes idle — see
 // server/session.js — so it's never silently relied on indefinitely.
 
 const LOGIN_LOCKOUT_THRESHOLD = 3;
 const LOGIN_LOCKOUT_SECONDS = 30 * 60;
+
+// Shared brute-force lockout, keyed by IP, used by both the Basic Auth
+// password prompt and the post-OTP password step — a wrong guess from either
+// path counts toward the same 3-strikes lockout for that IP.
+async function checkAdminPassword(c, password) {
+  const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+  const key = `admin-login-attempts:${ip}`;
+  const raw = await c.env.KV.get(key);
+  const state = raw ? JSON.parse(raw) : { count: 0, lockedUntil: 0 };
+
+  if (state.lockedUntil && Date.now() < state.lockedUntil) {
+    return { ok: false, locked: true, minutesLeft: Math.ceil((state.lockedUntil - Date.now()) / 60000) };
+  }
+
+  if (password != null && password === c.env.ADMIN_PASSWORD) {
+    if (state.count > 0) await c.env.KV.delete(key);
+    return { ok: true };
+  }
+
+  if (password != null) {
+    state.count += 1;
+    if (state.count >= LOGIN_LOCKOUT_THRESHOLD) {
+      state.lockedUntil = Date.now() + LOGIN_LOCKOUT_SECONDS * 1000;
+    }
+    await c.env.KV.put(key, JSON.stringify(state), { expirationTtl: LOGIN_LOCKOUT_SECONDS + 60 });
+  }
+  return { ok: false, locked: false };
+}
 
 function parseBasicAuth(c) {
   const header = c.req.header('Authorization') || '';
@@ -37,38 +68,15 @@ function requireBasicAuthChallenge(c) {
   return c.text('Unauthorized', 401);
 }
 
-// Brute-force protection on the admin password: after 3 wrong attempts from
-// the same IP, password-based admin login is locked for 30 minutes —
-// independent of the Google+OTP path, which has its own attempt limit
-// (server/auth.js's OTP_MAX_ATTEMPTS).
 async function requireAdminPassword(c) {
-  const ip = c.req.header('CF-Connecting-IP') || 'unknown';
-  const key = `admin-login-attempts:${ip}`;
-  const raw = await c.env.KV.get(key);
-  const state = raw ? JSON.parse(raw) : { count: 0, lockedUntil: 0 };
-
-  if (state.lockedUntil && Date.now() < state.lockedUntil) {
-    const minutesLeft = Math.ceil((state.lockedUntil - Date.now()) / 60000);
-    return c.text(`Too many incorrect password attempts. Try again in ${minutesLeft} minute(s).`, 429);
-  }
-
   const creds = parseBasicAuth(c);
-  const ok = !!creds && creds.username === 'admin' && creds.password === c.env.ADMIN_PASSWORD;
-
-  if (ok) {
-    if (state.count > 0) await c.env.KV.delete(key);
-    return null;
+  if (!creds || creds.username !== 'admin') return requireBasicAuthChallenge(c);
+  const result = await checkAdminPassword(c, creds.password);
+  if (result.locked) {
+    return c.text(`Too many incorrect password attempts. Try again in ${result.minutesLeft} minute(s).`, 429);
   }
-
-  if (creds) {
-    state.count += 1;
-    if (state.count >= LOGIN_LOCKOUT_THRESHOLD) {
-      state.lockedUntil = Date.now() + LOGIN_LOCKOUT_SECONDS * 1000;
-    }
-    await c.env.KV.put(key, JSON.stringify(state), { expirationTtl: LOGIN_LOCKOUT_SECONDS + 60 });
-  }
-
-  return requireBasicAuthChallenge(c);
+  if (!result.ok) return requireBasicAuthChallenge(c);
+  return null;
 }
 
 async function requireAdmin(c, next) {
@@ -127,7 +135,23 @@ app.post('/api/auth/verify-otp', async (c) => {
   const { code } = await c.req.json();
   const ok = await auth.verifyOtp(c.env, email, String(code || '').trim());
   if (!ok) return c.json({ error: 'Incorrect or expired code' }, 400);
+  // Third factor still to come — see /api/auth/verify-admin-password.
   session.pendingAdminEmail = null;
+  session.otpVerifiedEmail = email;
+  return c.json({ ok: true, needsPassword: true });
+});
+
+app.post('/api/auth/verify-admin-password', async (c) => {
+  const session = c.get('session');
+  const email = session.otpVerifiedEmail;
+  if (!email) return c.json({ error: 'Please verify your email code again' }, 400);
+  const { password } = await c.req.json();
+  const result = await checkAdminPassword(c, password);
+  if (result.locked) {
+    return c.json({ error: `Too many incorrect password attempts. Try again in ${result.minutesLeft} minute(s).` }, 429);
+  }
+  if (!result.ok) return c.json({ error: 'Incorrect password' }, 401);
+  session.otpVerifiedEmail = null;
   session.isAdmin = true;
   session.email = email;
   return c.json({ ok: true });
