@@ -1,18 +1,31 @@
 import { Hono } from 'hono';
 import { basicAuth } from 'hono/basic-auth';
+import * as oauth from './oauth.js';
+import { sessionMiddleware, destroySession } from './session.js';
 
 const app = new Hono();
 
-// The leads inbox is for one person (the company owner), so a single shared
-// Basic Auth password is enough here — no need for the full Google-OAuth/role
-// system the client-facing apps use for their multi-user staff dashboards.
+// Single admin, two ways in: the Basic Auth password (always available), or
+// Google sign-in (server/oauth.js) — optional, toggled from Site Content →
+// Access, and only ever grants access to the one email in ADMIN_EMAIL. No
+// role system needed since there's only ever one kind of logged-in user here.
 function requireAdmin(c, next) {
+  const session = c.get('session');
+  if (session && session.isAdmin) return next();
   return basicAuth({ username: 'admin', password: c.env.ADMIN_PASSWORD })(c, next);
 }
 
-app.use('/admin.html', requireAdmin);
-app.use('/api/leads', requireAdmin);
-app.use('/api/settings/site-content', requireAdmin);
+app.use('/admin.html', sessionMiddleware, requireAdmin);
+app.use('/api/leads', sessionMiddleware, requireAdmin);
+app.use('/api/settings/site-content', sessionMiddleware, requireAdmin);
+app.use('/auth/*', sessionMiddleware);
+
+app.get('/auth/google', oauth.googleAuthStart);
+app.get('/auth/google/callback', oauth.googleAuthCallback);
+app.get('/auth/logout', (c) => {
+  destroySession(c);
+  return c.redirect('/');
+});
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -25,6 +38,9 @@ function isValidEmail(email) {
 // than a nested add/remove-row UI, so the whole page can be rewritten from a
 // handful of textareas in /admin.html.
 const DEFAULT_SITE_CONTENT = {
+  // Off by default: the site works fully (including admin access via Basic
+  // Auth) without Google login ever being configured or turned on.
+  google_login_enabled: false,
   eyebrow: 'KLMN2 · Website Design, Hosting & Care',
   headline_main: 'We turn your idea into a live website —',
   headline_accent: 'and keep it that way.',

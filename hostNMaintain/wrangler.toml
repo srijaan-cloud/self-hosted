@@ -21,8 +21,23 @@ PUBLIC_BASE_URL = "https://hostnmaintain.klmn2.com"
 RESEND_FROM_EMAIL = "HostNMaintain <login@klmn2.com>"
 # Where new-enquiry notification emails are sent. Not secret, just an address.
 ADMIN_NOTIFY_EMAIL = "srijaan2307@gmail.com"
+# The only Google account allowed to sign in as admin (see server/oauth.js) —
+# single-admin site, so this is an exact-match allowlist of one, not a user table.
+ADMIN_EMAIL = "srijaan2307@gmail.com"
+# Reuses the same Google OAuth client as the sibling apps — its redirect URI
+# list needs "https://hostnmaintain.klmn2.com/auth/google/callback" added in
+# Google Cloud Console. GOOGLE_CLIENT_SECRET is set separately via
+# `npx wrangler secret put GOOGLE_CLIENT_SECRET` (this Worker's own secret,
+# even though the client ID is shared).
+GOOGLE_CLIENT_ID = "980056554331-55l48p5mifq9fv9no7a3gf1hl4dko54i.apps.googleusercontent.com"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "hostnmaintain"
 database_id = "f34daf85-ffae-4cd2-a794-3210e97c1d86"
+
+# Admin session storage only (Google-login sessions) — this site has no
+# visitor accounts, so nothing else needs KV.
+[[kv_namespaces]]
+binding = "KV"
+id = "e6a1c136604d4315a07daed0e4d50c04"

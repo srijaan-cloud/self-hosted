@@ -57,7 +57,10 @@
 </head>
 <body>
   <div class="admin-wrap">
-    <h1 class="brand-name" style="font-size:1.3rem;margin-bottom:24px;">HostNMaintain Admin</h1>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:10px;">
+      <h1 class="brand-name" style="font-size:1.3rem;">HostNMaintain Admin</h1>
+      <a href="/auth/logout" class="btn btn-ghost btn-small" style="width:auto;">Log out</a>
+    </div>
 
     <div class="admin-tabs">
       <button class="admin-tab-btn active" data-tab="leads">Leads</button>
@@ -70,6 +73,15 @@
 
     <div id="panel-content" class="admin-panel" hidden>
       <form id="content-form">
+        <div class="content-section-title" style="margin-top:0; padding-top:0; border-top:none;">Access</div>
+        <div class="content-field">
+          <label style="display:flex; align-items:center; gap:8px; font-weight:600;">
+            <input type="checkbox" name="google_login_enabled" style="width:auto; margin:0;" />
+            Show a "Login" link on the site and allow signing in with Google
+          </label>
+          <span class="hint">Only the account in ADMIN_EMAIL can actually sign in — this doesn't add other users. Basic Auth (the password login) keeps working either way.</span>
+        </div>
+
         <div class="content-section-title">Hero</div>
         <div class="content-field">
           <label>Eyebrow</label>
@@ -300,7 +312,9 @@
         for (const [key, value] of Object.entries(content)) {
           if (key === 'clients') continue;
           const field = contentForm.elements.namedItem(key);
-          if (field) field.value = value;
+          if (!field) continue;
+          if (field.type === 'checkbox') field.checked = !!value;
+          else field.value = value;
         }
         renderClientRows(content.clients);
       })
@@ -313,6 +327,7 @@
       e.preventDefault();
       const data = Object.fromEntries(new FormData(contentForm).entries());
       data.clients = serializeClientRows();
+      data.google_login_enabled = contentForm.elements.namedItem('google_login_enabled').checked;
       const saveBtn = document.getElementById('cs-save');
       saveBtn.disabled = true;
       csStatus.textContent = 'Saving…';

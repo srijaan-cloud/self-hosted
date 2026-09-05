@@ -189,6 +189,8 @@
       setText('contact-heading', content.contact_heading);
       setText('contact-sub', content.contact_sub);
       setText('footer-text', content.footer_text);
+      const loginLink = document.getElementById('header-login-link');
+      if (loginLink) loginLink.hidden = !content.google_login_enabled;
     })
     .catch(() => {
       // Static defaults already in the HTML stay as-is.
@@ -219,6 +221,7 @@
 // ---------- Contact form ----------
 (function contactForm() {
   const form = document.getElementById('contact-form');
+  if (!form) return; // this script also runs on pages with no contact form (e.g. login.html)
   const status = document.getElementById('cf-status');
   const submitBtn = document.getElementById('cf-submit');
 
