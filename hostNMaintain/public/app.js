@@ -50,12 +50,28 @@
     return div.innerHTML;
   }
 
-  function parseLines(text, sep) {
+  // Splits on `sep` at most `parts - 1` times, so if a field's own text
+  // happens to contain the delimiter, it stays intact in the last field
+  // instead of silently shifting every field after it.
+  function splitFields(line, sep, parts) {
+    const out = [];
+    let rest = line;
+    for (let i = 1; i < parts; i++) {
+      const idx = rest.indexOf(sep);
+      if (idx === -1) break;
+      out.push(rest.slice(0, idx).trim());
+      rest = rest.slice(idx + sep.length);
+    }
+    out.push(rest.trim());
+    return out;
+  }
+
+  function parseLines(text, sep, parts) {
     return String(text || '')
       .split('\n')
       .map((l) => l.trim())
       .filter(Boolean)
-      .map((l) => (sep ? l.split(sep).map((s) => s.trim()) : l));
+      .map((l) => (sep ? splitFields(l, sep, parts) : l));
   }
 
   function setText(id, value) {
@@ -74,7 +90,7 @@
   function renderWhatCards(text) {
     const el = document.getElementById('what-cards');
     if (!el) return;
-    el.innerHTML = parseLines(text, ' :: ')
+    el.innerHTML = parseLines(text, ' :: ', 3)
       .map(
         ([icon, title, desc]) => `
         <div class="magic-card">
@@ -89,7 +105,7 @@
   function renderProcessSteps(text) {
     const el = document.getElementById('process-grid');
     if (!el) return;
-    el.innerHTML = parseLines(text, ' :: ')
+    el.innerHTML = parseLines(text, ' :: ', 2)
       .map(
         ([title, desc], i) => `
         <div class="process-card">
@@ -104,7 +120,7 @@
   function renderFeatures(text) {
     const el = document.getElementById('feature-grid');
     if (!el) return;
-    el.innerHTML = parseLines(text, ' :: ')
+    el.innerHTML = parseLines(text, ' :: ', 3)
       .map(
         ([icon, title, desc]) => `
         <div class="feature-item">
@@ -121,7 +137,7 @@
   function renderClients(text) {
     const el = document.getElementById('clients-dynamic');
     if (!el) return;
-    el.innerHTML = parseLines(text, ' :: ')
+    el.innerHTML = parseLines(text, ' :: ', 3)
       .map(([name, desc, url]) => {
         const displayUrl = String(url || '').replace(/^https?:\/\//, '');
         // Tapasya keeps its hand-drawn construction icon; any client an admin

@@ -39,6 +39,20 @@
     #cs-status { min-height: 1.2em; font-size: 0.88rem; margin-top: 8px; }
     #cs-status.ok { color: #4ade80; }
     #cs-status.err { color: #f87171; }
+
+    .client-row {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px; margin-bottom: 10px;
+    }
+    .client-row-top { display: flex; gap: 8px; margin-bottom: 8px; }
+    .client-row-top .cr-name { flex: 1 1 40%; }
+    .client-row-top .cr-url { flex: 1 1 60%; }
+    .client-row-remove {
+      flex: 0 0 auto; width: 34px; background: rgba(248,113,113,0.12); color: #f87171;
+      border: 1px solid rgba(248,113,113,0.3); border-radius: var(--radius-sm); font-size: 1.1rem; line-height: 1;
+      cursor: pointer;
+    }
+    .client-row-remove:hover { background: rgba(248,113,113,0.22); }
   </style>
 </head>
 <body>
@@ -118,8 +132,9 @@
           <textarea name="clients_sub" rows="2"></textarea>
         </div>
         <div class="content-field">
-          <label>Client list <span class="hint">— one per line: name :: description :: URL (Tapasya keeps its icon; new names get an initials badge)</span></label>
-          <textarea name="clients" rows="5"></textarea>
+          <label>Clients <span class="hint">— Tapasya keeps its icon; new names get an initials badge</span></label>
+          <div id="client-rows"></div>
+          <button type="button" id="add-client-btn" class="btn btn-ghost btn-small" style="width: auto; align-self: flex-start;">+ Add Client</button>
         </div>
 
         <div class="content-section-title">Contact</div>
@@ -193,13 +208,101 @@
     const contentForm = document.getElementById('content-form');
     const csStatus = document.getElementById('cs-status');
 
+    // ---- Clients: add/remove rows instead of one raw " :: "-delimited textarea ----
+    const clientRowsEl = document.getElementById('client-rows');
+
+    function makeClientRow(name, desc, url) {
+      const row = document.createElement('div');
+      row.className = 'client-row';
+
+      const top = document.createElement('div');
+      top.className = 'client-row-top';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.className = 'cr-name';
+      nameInput.placeholder = 'Client name';
+      nameInput.value = name || '';
+
+      const urlInput = document.createElement('input');
+      urlInput.type = 'text';
+      urlInput.className = 'cr-url';
+      urlInput.placeholder = 'https://example.klmn2.com';
+      urlInput.value = url || '';
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'client-row-remove';
+      removeBtn.title = 'Remove client';
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', () => row.remove());
+
+      top.append(nameInput, urlInput, removeBtn);
+
+      const descInput = document.createElement('textarea');
+      descInput.className = 'cr-desc';
+      descInput.rows = 2;
+      descInput.placeholder = 'Short description';
+      descInput.value = desc || '';
+
+      row.append(top, descInput);
+      return row;
+    }
+
+    // Splits on " :: " at most twice, so a description that happens to
+    // contain the delimiter stays intact instead of shifting the URL field.
+    function splitClientLine(line) {
+      const out = [];
+      let rest = line;
+      for (let i = 0; i < 2; i++) {
+        const idx = rest.indexOf(' :: ');
+        if (idx === -1) break;
+        out.push(rest.slice(0, idx).trim());
+        rest = rest.slice(idx + 4);
+      }
+      out.push(rest.trim());
+      return out;
+    }
+
+    function renderClientRows(text) {
+      clientRowsEl.innerHTML = '';
+      String(text || '')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .forEach((line) => {
+          const [name, desc, url] = splitClientLine(line);
+          clientRowsEl.appendChild(makeClientRow(name, desc, url));
+        });
+    }
+
+    function serializeClientRows() {
+      return Array.from(clientRowsEl.querySelectorAll('.client-row'))
+        .map((row) => {
+          const name = row.querySelector('.cr-name').value.trim();
+          const url = row.querySelector('.cr-url').value.trim();
+          const desc = row.querySelector('.cr-desc').value.trim();
+          return name ? [name, desc, url].join(' :: ') : null;
+        })
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    document.getElementById('add-client-btn').addEventListener('click', () => {
+      const row = makeClientRow('', '', '');
+      clientRowsEl.appendChild(row);
+      row.querySelector('.cr-name').focus();
+    });
+
     fetch('/api/site-content')
       .then((r) => r.json())
       .then((content) => {
         for (const [key, value] of Object.entries(content)) {
+          if (key === 'clients') continue;
           const field = contentForm.elements.namedItem(key);
           if (field) field.value = value;
         }
+        renderClientRows(content.clients);
       })
       .catch(() => {
         csStatus.textContent = 'Failed to load current content.';
@@ -209,6 +312,7 @@
     contentForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(contentForm).entries());
+      data.clients = serializeClientRows();
       const saveBtn = document.getElementById('cs-save');
       saveBtn.disabled = true;
       csStatus.textContent = 'Saving…';
