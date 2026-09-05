@@ -1,0 +1,28 @@
+name = "hostnmaintain"
+main = "server/index.js"
+compatibility_date = "2026-08-25"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+html_handling = "none"
+
+[[routes]]
+pattern = "hostnmaintain.klmn2.com"
+custom_domain = true
+
+[vars]
+PUBLIC_BASE_URL = "https://hostnmaintain.klmn2.com"
+# Sender for lead-notification emails, sent via Resend (RESEND_API_KEY secret, set via
+# `npx wrangler secret put RESEND_API_KEY`). Domain must be verified in Resend — reuses
+# the same klmn2.com domain already verified for the sibling apps.
+RESEND_FROM_EMAIL = "HostNMaintain <login@klmn2.com>"
+# Where new-enquiry notification emails are sent. Not secret, just an address.
+ADMIN_NOTIFY_EMAIL = "srijaan2307@gmail.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hostnmaintain"
+database_id = "f34daf85-ffae-4cd2-a794-3210e97c1d86"

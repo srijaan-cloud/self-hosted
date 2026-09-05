@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leads — HostNMaintain Admin</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .admin-wrap { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+    .lead-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px 20px; margin-bottom: 14px; }
+    .lead-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .lead-name { font-weight: 700; font-family: var(--font-display); }
+    .lead-meta { color: var(--ink-faint); font-size: 0.8rem; }
+    .lead-field { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 2px; }
+    .lead-message { margin-top: 8px; white-space: pre-wrap; font-size: 0.9rem; }
+    .lead-email { color: var(--cyan); }
+  </style>
+</head>
+<body>
+  <div class="admin-wrap">
+    <h1 class="brand-name" style="font-size:1.3rem;margin-bottom:24px;">Leads</h1>
+    <div id="leads-list">Loading…</div>
+  </div>
+  <script>
+    fetch('/api/leads')
+      .then((r) => r.json())
+      .then(({ leads }) => {
+        const list = document.getElementById('leads-list');
+        if (!leads.length) {
+          list.textContent = 'No enquiries yet.';
+          return;
+        }
+        list.innerHTML = leads.map((l) => `
+          <div class="lead-card">
+            <div class="lead-top">
+              <span class="lead-name">${escapeHtml(l.name)}</span>
+              <span class="lead-meta">${escapeHtml(l.created_at)}</span>
+            </div>
+            <div class="lead-field"><a class="lead-email" href="mailto:${escapeHtml(l.email)}">${escapeHtml(l.email)}</a></div>
+            ${l.phone ? `<div class="lead-field">${escapeHtml(l.phone)}</div>` : ''}
+            ${l.company ? `<div class="lead-field">${escapeHtml(l.company)}</div>` : ''}
+            ${l.budget ? `<div class="lead-field">${escapeHtml(l.budget)}</div>` : ''}
+            <div class="lead-message">${escapeHtml(l.message)}</div>
+          </div>
+        `).join('');
+      })
+      .catch(() => {
+        document.getElementById('leads-list').textContent = 'Failed to load leads.';
+      });
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s ?? '';
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

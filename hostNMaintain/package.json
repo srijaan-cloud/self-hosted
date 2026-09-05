@@ -1,0 +1,23 @@
+{
+  "name": "hostnmaintain-worker",
+  "version": "1.0.0",
+  "description": "KLMN2's own marketing site — explains the design/host/maintain service and captures client enquiries (Cloudflare Worker)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply hostnmaintain --local",
+    "db:migrate:remote": "wrangler d1 migrations apply hostnmaintain --remote"
+  },
+  "dependencies": {
+    "hono": "^4.13.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.129.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "workerd@1.20260903.1": true
+  }
+}
