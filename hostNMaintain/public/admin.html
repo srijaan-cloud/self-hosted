@@ -41,6 +41,13 @@
     }
     .role-select option { background: var(--bg-alt); color: var(--ink); }
     .role-select:disabled { opacity: 0.5; }
+    .promote-otp-box { display: flex; align-items: center; gap: 6px; }
+    .promote-otp-input {
+      width: 90px; text-align: center; letter-spacing: 0.2em; font-weight: 700;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--ink); padding: 7px 8px; font-family: inherit; font-size: 0.85rem;
+    }
+    .promote-otp-input:focus { outline: none; border-color: var(--violet); }
 
     .content-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
     .content-field label { font-size: 0.8rem; color: var(--ink-soft); font-weight: 600; }
@@ -250,6 +257,58 @@
       return `<select class="role-select" data-email="${escapeHtml(email)}" data-current-role="${escapeHtml(currentRole)}">${options}</select>`;
     }
 
+    async function applyRoleChange(select, email, newRole, previousRole, code) {
+      select.disabled = true;
+      try {
+        const res = await fetch(`/api/users/${encodeURIComponent(email)}/role`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(code ? { role: newRole, code } : { role: newRole }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not update role');
+        loadUsers();
+        return true;
+      } catch (err) {
+        alert(err.message);
+        select.value = previousRole;
+        select.disabled = false;
+        return false;
+      }
+    }
+
+    function showPromoteOtpBox(select, email, previousRole) {
+      const box = document.createElement('div');
+      box.className = 'promote-otp-box';
+      box.innerHTML = `
+        <input type="text" inputmode="numeric" maxlength="6" placeholder="Code" class="promote-otp-input" />
+        <button type="button" class="btn btn-glow btn-small promote-otp-confirm" style="width:auto;">Confirm</button>
+        <button type="button" class="btn btn-ghost btn-small promote-otp-cancel" style="width:auto;">Cancel</button>
+      `;
+      select.insertAdjacentElement('afterend', box);
+      select.hidden = true;
+
+      const input = box.querySelector('.promote-otp-input');
+      const confirmBtn = box.querySelector('.promote-otp-confirm');
+      input.focus();
+
+      box.querySelector('.promote-otp-cancel').addEventListener('click', () => {
+        select.value = previousRole;
+        select.hidden = false;
+        select.disabled = false;
+        box.remove();
+      });
+
+      confirmBtn.addEventListener('click', async () => {
+        confirmBtn.disabled = true;
+        const ok = await applyRoleChange(select, email, 'admin', previousRole, input.value.trim());
+        if (!ok) {
+          select.hidden = false;
+          box.remove();
+        }
+      });
+    }
+
     function loadUsers() {
       fetch('/api/users')
         .then((r) => r.json())
@@ -280,21 +339,25 @@
               const email = select.dataset.email;
               const newRole = select.value;
               const previousRole = select.dataset.currentRole;
+
+              if (newRole !== 'admin') {
+                await applyRoleChange(select, email, newRole, previousRole);
+                return;
+              }
+
+              // Promoting to admin needs a fresh OTP confirmation first.
               select.disabled = true;
               try {
-                const res = await fetch(`/api/users/${encodeURIComponent(email)}/role`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ role: newRole }),
-                });
+                const res = await fetch(`/api/users/${encodeURIComponent(email)}/promote-otp`, { method: 'POST' });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Could not update role');
-                loadUsers();
+                if (!res.ok) throw new Error(data.error || 'Could not send confirmation code');
               } catch (err) {
                 alert(err.message);
                 select.value = previousRole;
                 select.disabled = false;
+                return;
               }
+              showPromoteOtpBox(select, email, previousRole);
             });
           });
         })

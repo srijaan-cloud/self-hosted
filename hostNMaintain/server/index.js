@@ -109,6 +109,25 @@ app.get('/api/users', async (c) => {
   return c.json({ users });
 });
 
+// Promoting someone to admin is sensitive enough to need a fresh OTP from
+// the acting admin — not just an active session — before it takes effect.
+// Sent to session.email when the acting admin came in via Google, or
+// ADMIN_EMAIL when they came in via Basic Auth (which sets no session
+// email). Demoting back to viewer doesn't need this — it only removes
+// access, so there's nothing to gate.
+function actingAdminEmail(c) {
+  return c.get('session').email || c.env.ADMIN_EMAIL;
+}
+
+app.post('/api/users/:email/promote-otp', async (c) => {
+  try {
+    await auth.requestOtp(c.env, actingAdminEmail(c));
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
 app.patch('/api/users/:email/role', async (c) => {
   const email = decodeURIComponent(c.req.param('email')).trim().toLowerCase();
   const adminEmail = String(c.env.ADMIN_EMAIL || '').trim().toLowerCase();
@@ -117,9 +136,13 @@ app.patch('/api/users/:email/role', async (c) => {
   if (email === adminEmail) {
     return c.json({ error: 'This account’s role is fixed and can’t be changed here' }, 400);
   }
-  const { role } = await c.req.json();
+  const { role, code } = await c.req.json();
   if (!VALID_ROLES.includes(role)) {
     return c.json({ error: `role must be one of: ${VALID_ROLES.join(', ')}` }, 400);
+  }
+  if (role === 'admin') {
+    const ok = await auth.verifyOtp(c.env, actingAdminEmail(c), String(code || '').trim());
+    if (!ok) return c.json({ error: 'Incorrect or expired code' }, 400);
   }
   const result = await c.env.DB.prepare('UPDATE users SET role = ? WHERE email = ?').bind(role, email).run();
   if (result.meta.changes === 0) return c.json({ error: 'No such user' }, 404);
