@@ -73,6 +73,7 @@
     .client-row-top { display: flex; gap: 8px; margin-bottom: 8px; }
     .client-row-top .cr-name { flex: 1 1 40%; }
     .client-row-top .cr-url { flex: 1 1 60%; }
+    .cr-image { width: 100%; }
     .client-row-remove {
       flex: 0 0 auto; width: 34px; background: rgba(248,113,113,0.12); color: #f87171;
       border: 1px solid rgba(248,113,113,0.3); border-radius: var(--radius-sm); font-size: 1.1rem; line-height: 1;
@@ -374,7 +375,7 @@
     // ---- Clients: add/remove rows instead of one raw " :: "-delimited textarea ----
     const clientRowsEl = document.getElementById('client-rows');
 
-    function makeClientRow(name, desc, url) {
+    function makeClientRow(name, desc, url, imageUrl) {
       const row = document.createElement('div');
       row.className = 'client-row';
 
@@ -408,16 +409,24 @@
       descInput.placeholder = 'Short description';
       descInput.value = desc || '';
 
-      row.append(top, descInput);
+      const imageInput = document.createElement('input');
+      imageInput.type = 'text';
+      imageInput.className = 'cr-image';
+      imageInput.placeholder = 'Photo URL (optional — leave blank for an initials badge)';
+      imageInput.value = imageUrl || '';
+      imageInput.style.marginTop = '8px';
+
+      row.append(top, descInput, imageInput);
       return row;
     }
 
-    // Splits on " :: " at most twice, so a description that happens to
-    // contain the delimiter stays intact instead of shifting the URL field.
+    // Splits on " :: " at most 3 times (4 fields), so a description that
+    // happens to contain the delimiter stays intact instead of shifting
+    // later fields.
     function splitClientLine(line) {
       const out = [];
       let rest = line;
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 3; i++) {
         const idx = rest.indexOf(' :: ');
         if (idx === -1) break;
         out.push(rest.slice(0, idx).trim());
@@ -434,8 +443,8 @@
         .map((l) => l.trim())
         .filter(Boolean)
         .forEach((line) => {
-          const [name, desc, url] = splitClientLine(line);
-          clientRowsEl.appendChild(makeClientRow(name, desc, url));
+          const [name, desc, url, imageUrl] = splitClientLine(line);
+          clientRowsEl.appendChild(makeClientRow(name, desc, url, imageUrl));
         });
     }
 
@@ -445,14 +454,18 @@
           const name = row.querySelector('.cr-name').value.trim();
           const url = row.querySelector('.cr-url').value.trim();
           const desc = row.querySelector('.cr-desc').value.trim();
-          return name ? [name, desc, url].join(' :: ') : null;
+          const imageUrl = row.querySelector('.cr-image').value.trim();
+          if (!name) return null;
+          const parts = [name, desc, url];
+          if (imageUrl) parts.push(imageUrl);
+          return parts.join(' :: ');
         })
         .filter(Boolean)
         .join('\n');
     }
 
     document.getElementById('add-client-btn').addEventListener('click', () => {
-      const row = makeClientRow('', '', '');
+      const row = makeClientRow('', '', '', '');
       clientRowsEl.appendChild(row);
       row.querySelector('.cr-name').focus();
     });

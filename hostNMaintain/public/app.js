@@ -137,14 +137,16 @@
   function renderClients(text) {
     const el = document.getElementById('clients-dynamic');
     if (!el) return;
-    el.innerHTML = parseLines(text, ' :: ', 3)
-      .map(([name, desc, url]) => {
+    el.innerHTML = parseLines(text, ' :: ', 4)
+      .map(([name, desc, url, imageUrl]) => {
         const displayUrl = String(url || '').replace(/^https?:\/\//, '');
-        // Tapasya keeps its hand-drawn construction icon; any client an admin
-        // adds later gets a plain initials badge instead of a bespoke SVG.
-        const visual =
-          name.trim() === 'Tapasya Constructions'
-            ? `<div class="client-visual client-visual-construction" aria-hidden="true">
+        // A client with a photo URL gets that; Tapasya (no photo set) keeps
+        // its hand-drawn construction icon as a special case; anything else
+        // falls back to a plain initials badge.
+        const visual = imageUrl
+          ? `<div class="client-visual client-visual-photo" style="background-image: url('${escapeHtml(imageUrl)}')" aria-hidden="true"></div>`
+          : name.trim() === 'Tapasya Constructions'
+          ? `<div class="client-visual client-visual-construction" aria-hidden="true">
                 <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="10" y="30" width="14" height="40" fill="currentColor" opacity="0.85"/>
                   <rect x="30" y="18" width="14" height="52" fill="currentColor" opacity="0.7"/>
