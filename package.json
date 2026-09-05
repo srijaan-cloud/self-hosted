@@ -1,0 +1,21 @@
+{
+  "name": "shriya-function-hall",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply shriya-function-hall --local",
+    "db:migrate:remote": "wrangler d1 migrations apply shriya-function-hall --remote"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "workerd@1.20260903.1": true
+  }
+}

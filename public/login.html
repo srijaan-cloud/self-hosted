@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Login — Shriya Function Hall</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f5f0e8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  .box { background: white; padding: 32px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 320px; }
+  h1 { font-size: 1.1rem; margin-top: 0; }
+  label { display: block; font-size: 0.85rem; margin: 12px 0 4px; }
+  input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
+  button { width: 100%; margin-top: 16px; padding: 10px; background: #6b1220; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; }
+  #msg { font-size: 0.85rem; color: #b5432f; min-height: 1.2em; margin-top: 8px; }
+  #bootstrapNote { font-size: 0.8rem; color: #6b5f57; margin-top: 16px; }
+  a { color: #6b1220; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1 id="heading">Admin Login</h1>
+    <form id="loginForm">
+      <label>Username</label>
+      <input type="text" id="username" autocomplete="username" required>
+      <label>Password</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+      <div id="msg"></div>
+      <button type="submit" id="submitBtn">Sign In</button>
+    </form>
+    <p id="bootstrapNote" hidden>No admin account exists yet — the form above will create the one admin account (username + password, min 8 characters).</p>
+    <p><a href="/">&larr; Back to site</a></p>
+  </div>
+  <script src="/login.js"></script>
+</body>
+</html>
