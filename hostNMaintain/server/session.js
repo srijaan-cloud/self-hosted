@@ -28,8 +28,12 @@ export async function sessionMiddleware(c, next) {
   }
 
   // Nothing worth persisting — skip writing an empty row to KV for every
-  // anonymous visitor.
-  if (!finalSession.isAdmin && !finalSid) return;
+  // anonymous visitor. Bug fixed here: this used to check `isAdmin`
+  // specifically, which silently dropped the mid-OAuth `googleOAuth` state
+  // (set on a brand-new, cookie-less visitor by googleAuthStart) since
+  // isAdmin isn't true yet at that point — no cookie ever got set, so the
+  // callback always saw no session and failed with "expired".
+  if (!finalSid && Object.keys(finalSession).length === 0) return;
 
   const id = finalSid || crypto.randomUUID();
   await c.env.KV.put(`session:${id}`, JSON.stringify(finalSession), {
