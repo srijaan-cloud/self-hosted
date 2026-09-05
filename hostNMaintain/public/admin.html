@@ -3,10 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Leads — HostNMaintain Admin</title>
+  <title>Admin — HostNMaintain</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     .admin-wrap { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+    .admin-tabs { display: flex; gap: 8px; margin-bottom: 28px; }
+    .admin-tab-btn {
+      padding: 9px 18px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--ink-soft); font-weight: 600; font-size: 0.85rem;
+    }
+    .admin-tab-btn.active { color: var(--ink); border-color: var(--border-strong); background: var(--surface-strong); }
+    .admin-panel[hidden] { display: none; }
+
     .lead-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 18px 20px; margin-bottom: 14px; }
     .lead-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
     .lead-name { font-weight: 700; font-family: var(--font-display); }
@@ -14,14 +22,147 @@
     .lead-field { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 2px; }
     .lead-message { margin-top: 8px; white-space: pre-wrap; font-size: 0.9rem; }
     .lead-email { color: var(--cyan); }
+
+    .content-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+    .content-field label { font-size: 0.8rem; color: var(--ink-soft); font-weight: 600; }
+    .content-field .hint { font-size: 0.72rem; color: var(--ink-faint); font-weight: 400; }
+    .content-field input, .content-field textarea {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--ink); padding: 10px 12px; font-family: inherit; font-size: 0.88rem;
+    }
+    .content-field textarea { resize: vertical; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; }
+    .content-section-title {
+      font-family: var(--font-display); font-weight: 700; font-size: 0.95rem; margin: 30px 0 14px;
+      padding-top: 18px; border-top: 1px solid var(--border);
+    }
+    .content-section-title:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+    #cs-status { min-height: 1.2em; font-size: 0.88rem; margin-top: 8px; }
+    #cs-status.ok { color: #4ade80; }
+    #cs-status.err { color: #f87171; }
   </style>
 </head>
 <body>
   <div class="admin-wrap">
-    <h1 class="brand-name" style="font-size:1.3rem;margin-bottom:24px;">Leads</h1>
-    <div id="leads-list">Loading…</div>
+    <h1 class="brand-name" style="font-size:1.3rem;margin-bottom:24px;">HostNMaintain Admin</h1>
+
+    <div class="admin-tabs">
+      <button class="admin-tab-btn active" data-tab="leads">Leads</button>
+      <button class="admin-tab-btn" data-tab="content">Site Content</button>
+    </div>
+
+    <div id="panel-leads" class="admin-panel">
+      <div id="leads-list">Loading…</div>
+    </div>
+
+    <div id="panel-content" class="admin-panel" hidden>
+      <form id="content-form">
+        <div class="content-section-title">Hero</div>
+        <div class="content-field">
+          <label>Eyebrow</label>
+          <input name="eyebrow" type="text" />
+        </div>
+        <div class="content-field">
+          <label>Headline (plain part)</label>
+          <input name="headline_main" type="text" />
+        </div>
+        <div class="content-field">
+          <label>Headline (highlighted part)</label>
+          <input name="headline_accent" type="text" />
+        </div>
+        <div class="content-field">
+          <label>Subheading</label>
+          <textarea name="hero_sub" rows="2"></textarea>
+        </div>
+        <div class="content-field">
+          <label>Trust pills <span class="hint">— one per line</span></label>
+          <textarea name="trust_pills" rows="3"></textarea>
+        </div>
+
+        <div class="content-section-title">What We Do</div>
+        <div class="content-field">
+          <label>Section heading</label>
+          <input name="what_heading" type="text" />
+        </div>
+        <div class="content-field">
+          <label>Cards <span class="hint">— one per line: icon :: title :: description</span></label>
+          <textarea name="what_cards" rows="5"></textarea>
+        </div>
+
+        <div class="content-section-title">Process</div>
+        <div class="content-field">
+          <label>Section heading</label>
+          <input name="process_heading" type="text" />
+        </div>
+        <div class="content-field">
+          <label>Steps <span class="hint">— one per line: title :: description (numbered automatically)</span></label>
+          <textarea name="process_steps" rows="5"></textarea>
+        </div>
+
+        <div class="content-section-title">Why Host With Us</div>
+        <div class="content-field">
+          <label>Section heading</label>
+          <input name="features_heading" type="text" />
+        </div>
+        <div class="content-field">
+          <label>Features <span class="hint">— one per line: icon :: title :: description</span></label>
+          <textarea name="features" rows="7"></textarea>
+        </div>
+
+        <div class="content-section-title">Clients</div>
+        <div class="content-field">
+          <label>Section heading</label>
+          <input name="clients_heading" type="text" />
+        </div>
+        <div class="content-field">
+          <label>Section subheading</label>
+          <textarea name="clients_sub" rows="2"></textarea>
+        </div>
+        <div class="content-field">
+          <label>Client list <span class="hint">— one per line: name :: description :: URL (Tapasya keeps its icon; new names get an initials badge)</span></label>
+          <textarea name="clients" rows="5"></textarea>
+        </div>
+
+        <div class="content-section-title">Contact</div>
+        <div class="content-field">
+          <label>Section heading</label>
+          <input name="contact_heading" type="text" />
+        </div>
+        <div class="content-field">
+          <label>Section subheading</label>
+          <textarea name="contact_sub" rows="2"></textarea>
+        </div>
+
+        <div class="content-section-title">Footer</div>
+        <div class="content-field">
+          <label>Footer text</label>
+          <input name="footer_text" type="text" />
+        </div>
+
+        <button type="submit" class="btn btn-glow" id="cs-save">Save Changes</button>
+        <a class="btn btn-ghost" href="/" target="_blank" style="margin-left:10px;">Preview Site ↗</a>
+        <p id="cs-status" role="status"></p>
+      </form>
+    </div>
   </div>
+
   <script>
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s ?? '';
+      return div.innerHTML;
+    }
+
+    // ---------- Tabs ----------
+    document.querySelectorAll('.admin-tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.admin-tab-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.admin-panel').forEach((p) => (p.hidden = true));
+        document.getElementById(`panel-${btn.dataset.tab}`).hidden = false;
+      });
+    });
+
+    // ---------- Leads ----------
     fetch('/api/leads')
       .then((r) => r.json())
       .then(({ leads }) => {
@@ -48,11 +189,46 @@
         document.getElementById('leads-list').textContent = 'Failed to load leads.';
       });
 
-    function escapeHtml(s) {
-      const div = document.createElement('div');
-      div.textContent = s ?? '';
-      return div.innerHTML;
-    }
+    // ---------- Site content ----------
+    const contentForm = document.getElementById('content-form');
+    const csStatus = document.getElementById('cs-status');
+
+    fetch('/api/site-content')
+      .then((r) => r.json())
+      .then((content) => {
+        for (const [key, value] of Object.entries(content)) {
+          const field = contentForm.elements.namedItem(key);
+          if (field) field.value = value;
+        }
+      })
+      .catch(() => {
+        csStatus.textContent = 'Failed to load current content.';
+        csStatus.className = 'err';
+      });
+
+    contentForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(contentForm).entries());
+      const saveBtn = document.getElementById('cs-save');
+      saveBtn.disabled = true;
+      csStatus.textContent = 'Saving…';
+      csStatus.className = '';
+      try {
+        const res = await fetch('/api/settings/site-content', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) throw new Error('save_failed');
+        csStatus.textContent = '✨ Saved — refresh the site to see it live.';
+        csStatus.className = 'ok';
+      } catch {
+        csStatus.textContent = 'Something went wrong saving — please try again.';
+        csStatus.className = 'err';
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>

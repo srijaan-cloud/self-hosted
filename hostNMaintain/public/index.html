@@ -38,12 +38,12 @@
   <main id="top">
     <section class="hero">
       <div class="hero-inner reveal">
-        <p class="eyebrow">KLMN2 · Website Design, Hosting &amp; Care</p>
+        <p class="eyebrow" id="hero-eyebrow">KLMN2 · Website Design, Hosting &amp; Care</p>
         <h1 class="hero-headline">
-          We turn your idea into a live website —
-          <span class="gradient-text">and keep it that way.</span>
+          <span id="hero-headline-main">We turn your idea into a live website —</span>
+          <span class="gradient-text" id="hero-headline-accent">and keep it that way.</span>
         </h1>
-        <p class="hero-sub">
+        <p class="hero-sub" id="hero-sub">
           Tell us what you need. We design it, publish it on our own klmn2.com
           infrastructure, and stay on to maintain it — so you never have to think
           about servers, uptime, or updates.
@@ -52,7 +52,7 @@
           <a class="btn btn-glow" href="#contact">Start Your Project →</a>
           <a class="btn btn-ghost" href="#clients">See Our Work</a>
         </div>
-        <div class="trust-row">
+        <div class="trust-row" id="trust-row">
           <span class="trust-pill">🌐 Cloudflare global network</span>
           <span class="trust-pill">⚡ Live in days, not months</span>
           <span class="trust-pill">🛠️ Maintenance included</span>
@@ -64,9 +64,9 @@
       <div class="section-inner">
         <div class="section-head reveal">
           <p class="eyebrow">What We Do</p>
-          <h2>From a conversation to a live, maintained website</h2>
+          <h2 id="what-heading">From a conversation to a live, maintained website</h2>
         </div>
-        <div class="card-grid reveal">
+        <div class="card-grid reveal" id="what-cards">
           <div class="magic-card">
             <div class="card-icon">💬</div>
             <h3>Understand</h3>
@@ -95,9 +95,9 @@
       <div class="section-inner">
         <div class="section-head reveal">
           <p class="eyebrow">How It Works</p>
-          <h2>Four steps, one point of contact the whole way</h2>
+          <h2 id="process-heading">Four steps, one point of contact the whole way</h2>
         </div>
-        <div class="process-grid reveal">
+        <div class="process-grid reveal" id="process-grid">
           <div class="process-card">
             <div class="process-number">01</div>
             <h3>Discovery Call</h3>
@@ -126,9 +126,9 @@
       <div class="section-inner">
         <div class="section-head reveal">
           <p class="eyebrow">Why Host With Us</p>
-          <h2>Everything after launch, handled</h2>
+          <h2 id="features-heading">Everything after launch, handled</h2>
         </div>
-        <div class="feature-grid reveal">
+        <div class="feature-grid reveal" id="feature-grid">
           <div class="feature-item">
             <span class="feature-icon">🌐</span>
             <div>
@@ -179,30 +179,32 @@
       <div class="section-inner">
         <div class="section-head reveal">
           <p class="eyebrow">Clients</p>
-          <h2>Who we've built for</h2>
-          <p class="section-sub">A look at sites we've designed, hosted, and continue to maintain on klmn2.com.</p>
+          <h2 id="clients-heading">Who we've built for</h2>
+          <p class="section-sub" id="clients-sub">A look at sites we've designed, hosted, and continue to maintain on klmn2.com.</p>
         </div>
         <div class="client-grid reveal">
-          <a class="client-card" href="https://tapasyaconstructions.klmn2.com" target="_blank" rel="noopener">
-            <div class="client-visual client-visual-construction" aria-hidden="true">
-              <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="10" y="30" width="14" height="40" fill="currentColor" opacity="0.85"/>
-                <rect x="30" y="18" width="14" height="52" fill="currentColor" opacity="0.7"/>
-                <rect x="50" y="8" width="14" height="62" fill="currentColor" opacity="0.9"/>
-                <rect x="70" y="24" width="14" height="46" fill="currentColor" opacity="0.6"/>
-                <path d="M64 8 L100 8 M100 8 L100 30 M100 8 L88 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
-              </svg>
-            </div>
-            <div class="client-body">
-              <div class="client-name">Tapasya Constructions <span class="client-link-arrow">↗</span></div>
-              <p class="client-desc">
-                A construction company's full project &amp; accounts management system —
-                budgets, materials, and payments internally, plus a public showcase site
-                for prospective customers — live on their own klmn2.com subdomain.
-              </p>
-              <span class="client-url">tapasyaconstructions.klmn2.com</span>
-            </div>
-          </a>
+          <div id="clients-dynamic" style="display: contents;">
+            <a class="client-card" href="https://tapasyaconstructions.klmn2.com" target="_blank" rel="noopener">
+              <div class="client-visual client-visual-construction" aria-hidden="true">
+                <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="10" y="30" width="14" height="40" fill="currentColor" opacity="0.85"/>
+                  <rect x="30" y="18" width="14" height="52" fill="currentColor" opacity="0.7"/>
+                  <rect x="50" y="8" width="14" height="62" fill="currentColor" opacity="0.9"/>
+                  <rect x="70" y="24" width="14" height="46" fill="currentColor" opacity="0.6"/>
+                  <path d="M64 8 L100 8 M100 8 L100 30 M100 8 L88 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+                </svg>
+              </div>
+              <div class="client-body">
+                <div class="client-name">Tapasya Constructions <span class="client-link-arrow">↗</span></div>
+                <p class="client-desc">
+                  A construction company's full project &amp; accounts management system —
+                  budgets, materials, and payments internally, plus a public showcase site
+                  for prospective customers — live on their own klmn2.com subdomain.
+                </p>
+                <span class="client-url">tapasyaconstructions.klmn2.com</span>
+              </div>
+            </a>
+          </div>
           <a class="client-card client-card-cta" href="#contact">
             <div class="client-visual client-visual-cta" aria-hidden="true">✨</div>
             <div class="client-body">
@@ -222,8 +224,8 @@
       <div class="section-inner contact-inner">
         <div class="section-head reveal">
           <p class="eyebrow">Contact</p>
-          <h2>Tell us what you're building</h2>
-          <p class="section-sub">Fill this in and we'll get back to you personally — no auto-replies, no sales team.</p>
+          <h2 id="contact-heading">Tell us what you're building</h2>
+          <p class="section-sub" id="contact-sub">Fill this in and we'll get back to you personally — no auto-replies, no sales team.</p>
         </div>
         <form id="contact-form" class="contact-form reveal" novalidate>
           <div class="form-row">
@@ -274,7 +276,7 @@
 
   <footer class="site-footer">
     <div class="footer-inner">
-      <span>© 2026 KLMN2 · Designed, hosted, and maintained on Cloudflare</span>
+      <span id="footer-text">© 2026 KLMN2 · Designed, hosted, and maintained on Cloudflare</span>
       <a href="https://tapasyaconstructions.klmn2.com" target="_blank" rel="noopener">Tapasya Constructions ↗</a>
     </div>
   </footer>

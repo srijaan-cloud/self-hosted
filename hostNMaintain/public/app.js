@@ -38,6 +38,147 @@
   requestAnimationFrame(draw);
 })();
 
+// ---------- Site content (admin-editable copy) ----------
+// The HTML already contains the same copy as DEFAULT_SITE_CONTENT on the
+// server, so this only overwrites anything an admin has actually changed via
+// /admin.html — if the fetch fails, the static defaults already in the page
+// just stay put.
+(function siteContent() {
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s ?? '';
+    return div.innerHTML;
+  }
+
+  function parseLines(text, sep) {
+    return String(text || '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => (sep ? l.split(sep).map((s) => s.trim()) : l));
+  }
+
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el && value != null) el.textContent = value;
+  }
+
+  function renderTrustPills(text) {
+    const el = document.getElementById('trust-row');
+    if (!el) return;
+    el.innerHTML = parseLines(text)
+      .map((line) => `<span class="trust-pill">${escapeHtml(line)}</span>`)
+      .join('');
+  }
+
+  function renderWhatCards(text) {
+    const el = document.getElementById('what-cards');
+    if (!el) return;
+    el.innerHTML = parseLines(text, ' :: ')
+      .map(
+        ([icon, title, desc]) => `
+        <div class="magic-card">
+          <div class="card-icon">${escapeHtml(icon)}</div>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(desc)}</p>
+        </div>`
+      )
+      .join('');
+  }
+
+  function renderProcessSteps(text) {
+    const el = document.getElementById('process-grid');
+    if (!el) return;
+    el.innerHTML = parseLines(text, ' :: ')
+      .map(
+        ([title, desc], i) => `
+        <div class="process-card">
+          <div class="process-number">${String(i + 1).padStart(2, '0')}</div>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(desc)}</p>
+        </div>`
+      )
+      .join('');
+  }
+
+  function renderFeatures(text) {
+    const el = document.getElementById('feature-grid');
+    if (!el) return;
+    el.innerHTML = parseLines(text, ' :: ')
+      .map(
+        ([icon, title, desc]) => `
+        <div class="feature-item">
+          <span class="feature-icon">${escapeHtml(icon)}</span>
+          <div>
+            <h3>${escapeHtml(title)}</h3>
+            <p>${escapeHtml(desc)}</p>
+          </div>
+        </div>`
+      )
+      .join('');
+  }
+
+  function renderClients(text) {
+    const el = document.getElementById('clients-dynamic');
+    if (!el) return;
+    el.innerHTML = parseLines(text, ' :: ')
+      .map(([name, desc, url]) => {
+        const displayUrl = String(url || '').replace(/^https?:\/\//, '');
+        // Tapasya keeps its hand-drawn construction icon; any client an admin
+        // adds later gets a plain initials badge instead of a bespoke SVG.
+        const visual =
+          name.trim() === 'Tapasya Constructions'
+            ? `<div class="client-visual client-visual-construction" aria-hidden="true">
+                <svg viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="10" y="30" width="14" height="40" fill="currentColor" opacity="0.85"/>
+                  <rect x="30" y="18" width="14" height="52" fill="currentColor" opacity="0.7"/>
+                  <rect x="50" y="8" width="14" height="62" fill="currentColor" opacity="0.9"/>
+                  <rect x="70" y="24" width="14" height="46" fill="currentColor" opacity="0.6"/>
+                  <path d="M64 8 L100 8 M100 8 L100 30 M100 8 L88 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+                </svg>
+              </div>`
+            : `<div class="client-visual client-visual-generic" aria-hidden="true">${escapeHtml(
+                name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '✨'
+              )}</div>`;
+        return `
+        <a class="client-card" href="${escapeHtml(url)}" target="_blank" rel="noopener">
+          ${visual}
+          <div class="client-body">
+            <div class="client-name">${escapeHtml(name)} <span class="client-link-arrow">↗</span></div>
+            <p class="client-desc">${escapeHtml(desc)}</p>
+            <span class="client-url">${escapeHtml(displayUrl)}</span>
+          </div>
+        </a>`;
+      })
+      .join('');
+  }
+
+  fetch('/api/site-content')
+    .then((r) => r.json())
+    .then((content) => {
+      setText('hero-eyebrow', content.eyebrow);
+      setText('hero-headline-main', content.headline_main);
+      setText('hero-headline-accent', content.headline_accent);
+      setText('hero-sub', content.hero_sub);
+      renderTrustPills(content.trust_pills);
+      setText('what-heading', content.what_heading);
+      renderWhatCards(content.what_cards);
+      setText('process-heading', content.process_heading);
+      renderProcessSteps(content.process_steps);
+      setText('features-heading', content.features_heading);
+      renderFeatures(content.features);
+      setText('clients-heading', content.clients_heading);
+      setText('clients-sub', content.clients_sub);
+      renderClients(content.clients);
+      setText('contact-heading', content.contact_heading);
+      setText('contact-sub', content.contact_sub);
+      setText('footer-text', content.footer_text);
+    })
+    .catch(() => {
+      // Static defaults already in the HTML stay as-is.
+    });
+})();
+
 // ---------- Reveal-on-scroll ----------
 (function revealOnScroll() {
   const targets = document.querySelectorAll('.reveal');

@@ -12,10 +12,70 @@ function requireAdmin(c, next) {
 
 app.use('/admin.html', requireAdmin);
 app.use('/api/leads', requireAdmin);
+app.use('/api/settings/site-content', requireAdmin);
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
+
+// ---------- Site content (admin-editable marketing copy) ----------
+// One JSON blob in a singleton D1 row, same pattern as
+// tapasyaConstructions/migrations/0011_site_content.sql. List-shaped fields
+// (cards, steps, features, clients) use simple " :: "-delimited lines rather
+// than a nested add/remove-row UI, so the whole page can be rewritten from a
+// handful of textareas in /admin.html.
+const DEFAULT_SITE_CONTENT = {
+  eyebrow: 'KLMN2 · Website Design, Hosting & Care',
+  headline_main: 'We turn your idea into a live website —',
+  headline_accent: 'and keep it that way.',
+  hero_sub: "Tell us what you need. We design it, publish it on our own klmn2.com infrastructure, and stay on to maintain it — so you never have to think about servers, uptime, or updates.",
+  trust_pills: `🌐 Cloudflare global network
+⚡ Live in days, not months
+🛠️ Maintenance included`,
+  what_heading: 'From a conversation to a live, maintained website',
+  what_cards: `💬 :: Understand :: We start by listening — your business, your customers, and what the site actually needs to do for you.
+🎨 :: Design :: A clean, custom design built around your brand — never a generic template stretched to fit.
+🚀 :: Host & Publish :: Deployed to your own subdomain on klmn2.com, served fast to every visitor on Cloudflare's global edge network.
+🛠️ :: Maintain :: We don't disappear after launch. We keep the site running, updated, and evolving with your requirements.`,
+  process_heading: 'Four steps, one point of contact the whole way',
+  process_steps: `Discovery Call :: We talk through what you're building, who it's for, and what "done" looks like.
+Design & Build :: We design and build your site end-to-end, checking in as it takes shape.
+Go Live :: Your site launches on a klmn2.com subdomain — secured, fast, and available to everyone.
+Ongoing Care :: We monitor it, fix what needs fixing, and add to it whenever your requirements change.`,
+  features_heading: 'Everything after launch, handled',
+  features: `🌐 :: Global Edge Network :: Hosted on Cloudflare's infrastructure — fast for every visitor, wherever they are.
+🔒 :: Secure by Default :: HTTPS everywhere, modern infrastructure, no plugins sitting around unpatched.
+🧭 :: One Point of Contact :: You talk directly to the person building your site — no ticket queues, no hand-offs.
+🎯 :: Custom, Not Templated :: Every site is designed around your actual business, not a theme with your logo dropped in.
+🧩 :: Built to Grow :: Add pages, features, or a client portal any time your requirements change — we build for that.
+🛎️ :: Maintenance Included :: Launch day isn't the finish line — we keep maintaining the site for as long as you need us.`,
+  clients_heading: "Who we've built for",
+  clients_sub: "A look at sites we've designed, hosted, and continue to maintain on klmn2.com.",
+  clients: `Tapasya Constructions :: A construction company's full project & accounts management system — budgets, materials, and payments internally, plus a public showcase site for prospective customers — live on their own klmn2.com subdomain. :: https://tapasyaconstructions.klmn2.com`,
+  contact_heading: "Tell us what you're building",
+  contact_sub: "Fill this in and we'll get back to you personally — no auto-replies, no sales team.",
+  footer_text: '© 2026 KLMN2 · Designed, hosted, and maintained on Cloudflare',
+};
+
+async function getSiteContent(env) {
+  const row = await env.DB.prepare('SELECT data FROM site_content WHERE id = 1').first();
+  const stored = row ? JSON.parse(row.data) : {};
+  return { ...DEFAULT_SITE_CONTENT, ...stored };
+}
+
+app.get('/api/site-content', async (c) => {
+  return c.json(await getSiteContent(c.env));
+});
+
+app.put('/api/settings/site-content', async (c) => {
+  const body = await c.req.json();
+  const merged = { ...(await getSiteContent(c.env)), ...body };
+  await c.env.DB.prepare(
+    `INSERT INTO site_content (id, data, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP`
+  ).bind(JSON.stringify(merged)).run();
+  return c.json(merged);
+});
 
 app.post('/api/contact', async (c) => {
   let body;
