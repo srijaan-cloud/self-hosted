@@ -101,7 +101,12 @@ app.get('/api/users', async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT email, name, role, first_login_at, last_login_at FROM users ORDER BY last_login_at DESC`
   ).all();
-  return c.json({ users: results });
+  const adminEmail = String(c.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  // Defensive display-layer fix: ADMIN_EMAIL is always admin regardless of
+  // what's stored (server/oauth.js self-heals this on their next login, but
+  // this keeps the badge honest even before that happens).
+  const users = results.map((u) => (u.email === adminEmail ? { ...u, role: 'admin' } : u));
+  return c.json({ users });
 });
 
 app.patch('/api/users/:email/role', async (c) => {

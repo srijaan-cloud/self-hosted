@@ -94,14 +94,22 @@ export async function googleAuthCallback(c) {
     session.name = name;
     session.email = email;
 
-    // A brand-new row seeds its role from ADMIN_EMAIL; an existing row's role
-    // (possibly since promoted/demoted from /admin.html → Users) is left
-    // alone by ON CONFLICT — this upsert only ever touches name/last_login.
-    const initialRole = email === adminEmail ? 'admin' : 'viewer';
-    await c.env.DB.prepare(
-      `INSERT INTO users (email, name, role, first_login_at, last_login_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-       ON CONFLICT(email) DO UPDATE SET name = excluded.name, last_login_at = CURRENT_TIMESTAMP`
-    ).bind(email, name, initialRole).run();
+    // ADMIN_EMAIL's row is force-healed to role='admin' on every login (it's
+    // always admin regardless of what got stored previously — e.g. a row
+    // created before this logic existed). Anyone else's role, once set, is
+    // left alone by ON CONFLICT so a manual promotion/demotion from
+    // /admin.html → Users survives their next login.
+    if (email === adminEmail) {
+      await c.env.DB.prepare(
+        `INSERT INTO users (email, name, role, first_login_at, last_login_at) VALUES (?, ?, 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         ON CONFLICT(email) DO UPDATE SET name = excluded.name, role = 'admin', last_login_at = CURRENT_TIMESTAMP`
+      ).bind(email, name).run();
+    } else {
+      await c.env.DB.prepare(
+        `INSERT INTO users (email, name, role, first_login_at, last_login_at) VALUES (?, ?, 'viewer', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         ON CONFLICT(email) DO UPDATE SET name = excluded.name, last_login_at = CURRENT_TIMESTAMP`
+      ).bind(email, name).run();
+    }
 
     const userRow = await c.env.DB.prepare('SELECT role FROM users WHERE email = ?').bind(email).first();
     const hasAdminRole = email === adminEmail || (userRow && userRow.role === 'admin');
