@@ -6,13 +6,14 @@ same style as the sibling `tapasyaConstructions` and `kids-timetable-worker` pro
 [Hono](https://hono.dev), [D1](https://developers.cloudflare.com/d1/) (serverless SQLite) for
 storing enquiries.
 
-Will be live at **https://hostnmaintain.klmn2.com** once deployed and the custom domain route
-is added in the Cloudflare dashboard for this zone.
+Live at **https://hostnmaintain.klmn2.com**.
 
 Unlike the other two apps, there's no login system for visitors — the whole site is public
 marketing content plus a contact form. The only protected page is `/admin.html` (and its
-`/api/leads` endpoint), gated by a single shared HTTP Basic Auth password (`ADMIN_PASSWORD`) —
-overkill to build a full multi-user role system for what is, for now, a one-person inbox.
+`/api/leads` and `/api/settings/site-content` endpoints), gated by a single shared HTTP Basic
+Auth password (`ADMIN_PASSWORD`) by default — overkill to build a full multi-user role system
+for what is a one-person inbox. An optional Google sign-in (see below) can be turned on as an
+alternate way in, on top of Basic Auth rather than instead of it.
 
 ## One-time setup (do this once per Cloudflare account)
 
@@ -35,10 +36,28 @@ npx wrangler secret put ADMIN_PASSWORD    # your own choice — protects /admin.
 `RESEND_FROM_EMAIL`'s domain (`klmn2.com`) is already verified in Resend from the sibling
 projects, so no extra Resend setup is needed beyond the API key.
 
-Finally, add the custom domain route in the Cloudflare dashboard (Workers & Pages → this
-Worker → Settings → Domains & Routes → Add → `hostnmaintain.klmn2.com`) the same way the other
-two subdomains were added — `wrangler.toml` already declares the route, but Cloudflare still
-needs the DNS record created for a brand-new subdomain the first time.
+`npx wrangler deploy` provisions the custom domain automatically from the `[[routes]]` block in
+`wrangler.toml` — no manual DNS step needed, even the first time.
+
+### Optional: Google sign-in for admin
+
+Off by default — Basic Auth alone is enough to run this site. To turn on "Sign in with Google"
+as an alternate way into `/admin.html` (toggled from Site Content → Access once deployed):
+
+```
+npx wrangler secret put GOOGLE_CLIENT_SECRET   # same value used for tapasyaConstructions/kids-timetable-worker
+```
+
+Then, in Google Cloud Console, under that same OAuth Client's **Authorized redirect URIs**, add:
+
+```
+https://hostnmaintain.klmn2.com/auth/google/callback
+```
+
+Only the address in `ADMIN_EMAIL` (`wrangler.toml`) can actually sign in this way — it's an
+allowlist of one, not a real user system, so a mismatched Google account is rejected outright.
+Until the toggle is switched on in Site Content, `/auth/google` just redirects back to
+`/login.html?error=disabled` even if someone hits it directly.
 
 ## Local development
 
@@ -77,19 +96,26 @@ npm run db:migrate:remote
 
 ## What's on the page
 
-- **Hero, What We Do, Process, Why Host With Us** — explains the design → host → maintain
-  service in plain terms.
-- **Clients** — showcases live client work; currently just `tapasyaConstructions.klmn2.com`
-  (the only real external client so far — `kids-timetable-worker` is an internal/personal
-  project, not a client deliverable, so it's intentionally not listed here). Add more
-  `.client-card` entries in `public/index.html` as new clients go live.
+- **Hero, What We Do, Process, Why Host With Us, Clients, Contact** — every heading, card,
+  step, and list on the page is admin-editable (see below), not hardcoded — the HTML just holds
+  the same copy as the defaults in `server/index.js` so the page still looks right before
+  JavaScript runs or if the content fetch ever fails.
+- **Clients** — currently just `tapasyaConstructions.klmn2.com` (the only real external client
+  so far — `kids-timetable-worker` is an internal/personal project, not a client deliverable, so
+  it's intentionally not listed). Add more from Site Content → Clients → **+ Add Client** as new
+  clients go live; Tapasya keeps its hand-drawn construction icon, new entries get an initials
+  badge.
 - **Contact form** (`POST /api/contact`) — saves every enquiry to the `leads` table in D1 and
   (if `RESEND_API_KEY` is set) emails a notification to `ADMIN_NOTIFY_EMAIL`. Includes a hidden
   honeypot field to quietly drop bot submissions.
-- **`/admin.html`** — a simple, Basic-Auth-protected list of everything in `leads`, newest first.
+- **`/admin.html`** — two tabs: **Leads** (everything in the `leads` table, newest first) and
+  **Site Content** (edit every piece of copy above, plus the Google-login toggle). Protected by
+  Basic Auth, or Google sign-in if turned on (see above).
 
 ## Notes / things to know
 
-- No `KV` or `R2` bindings — this site doesn't need sessions (no login) or file uploads.
+- Content edits take effect immediately (no redeploy) — `GET /api/site-content` is public,
+  `PUT /api/settings/site-content` is admin-only, both backed by a single `site_content` row in
+  D1 (see `migrations/0002_site_content.sql`).
 - The `www.` prefix was deliberately dropped from the subdomain — neither sibling app uses it,
   and it would have needed its own DNS route.
